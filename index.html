@@ -1,108 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Hub | Product Blueprint</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Payment Hub | Interactive Prototype v0.2</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <aside class="sidebar">
-  <div class="brand"><div class="logo">PH</div><div><h1>Payment Hub</h1><small>Product Blueprint v0.1</small></div></div>
+  <div class="brand"><div class="logo">PH</div><div><h1>Payment Hub</h1><small>Interactive Prototype v0.2</small></div></div>
   <nav>
-    <button class="nav active" data-page="overview">Overview</button>
-    <label>PRODUCT</label>
+    <button class="nav active" data-page="demo">▶ Payment Simulator</button>
+    <button class="nav" data-page="payments">Payments</button>
+    <button class="nav" data-page="payment-detail">Payment Detail</button>
+    <label>CONFIGURATION</label>
+    <button class="nav" data-page="correspondents">Correspondent Banks</button>
+    <button class="nav" data-page="nostros">Nostro Accounts</button>
+    <button class="nav" data-page="routing-rules">Routing Rules</button>
+    <button class="nav" data-page="fees">Fee / Cost Rules</button>
+    <button class="nav" data-page="profiles">Message Profiles</button>
+    <label>PRODUCT BLUEPRINT</label>
     <button class="nav" data-page="architecture">Architecture</button>
-    <button class="nav" data-page="canonical">Canonical Payment Model</button>
+    <button class="nav" data-page="canonical">Canonical Model</button>
     <button class="nav" data-page="engines">Engines</button>
-    <label>PAYMENT FLOWS</label>
-    <button class="nav" data-page="outgoing">Outgoing Payment</button>
-    <button class="nav" data-page="incoming">Incoming Payment</button>
-    <label>PLATFORM</label>
-    <button class="nav" data-page="integrations">Integrations</button>
-    <button class="nav" data-page="reconciliation">Reconciliation</button>
-    <button class="nav" data-page="operations">Operations UI</button>
-    <label>DELIVERY</label>
-    <button class="nav" data-page="mvp">MVP</button>
-    <button class="nav" data-page="roadmap">Roadmap</button>
   </nav>
-  <footer>Core Agnostic · Rail Agnostic · API First</footer>
+  <footer>Core Agnostic · Rail Agnostic · Payment Centric</footer>
 </aside>
 
 <main>
-<section id="overview" class="page active">
-  <p class="eyebrow">PRODUCT VISION</p>
-  <h2>One platform for the complete payment lifecycle.</h2>
-  <p class="lead">A core-agnostic payment orchestration platform connecting banking systems with payment networks while centralizing ISO 20022 messaging, payment processing, operational management and reconciliation.</p>
-  <div class="flow big"><div><b>Channels & Systems</b><span>Mobile / Web</span><span>Core Banking</span><span>ERP / APIs</span></div><i>→</i><div class="hub"><b>PAYMENT HUB</b><span>Orchestration</span><span>Canonical Model</span><span>ISO · Routing · Reconciliation</span></div><i>→</i><div><b>Payment Networks</b><span>SWIFT CBPR+</span><span>SEPA / SCT Inst</span><span>TIPS / RT1 / DIAS</span></div></div>
-  <div class="grid3"><article><b>Core Agnostic</b><p>Standardized adapter layer for different Core Banking Systems.</p></article><article><b>Rail Agnostic</b><p>Payments are independent of SWIFT, SEPA, TIPS, RT1 or other rails.</p></article><article><b>Payment Centric</b><p>The platform manages the payment lifecycle, not isolated messages.</p></article></div>
+<header class="topbar"><div><span class="env">DEMO</span><b>Payment Hub</b></div><div class="bo">BO Agent · Operations</div></header>
+
+<section id="demo" class="page active">
+  <div class="eyebrow">END-TO-END DEMO</div>
+  <h2>Outgoing SWIFT Payment Simulator</h2>
+  <p class="lead">Simulate a payment instruction received from Core Banking and watch the Hub validate, route, generate a pacs.008 and expose the result to the Back Office.</p>
+
+  <div class="demo-grid">
+    <article class="panel">
+      <div class="panel-title"><div><small>INPUT</small><h3>Core Banking Request</h3></div><span class="badge blue">POST /api/v1/payments</span></div>
+      <div class="form-grid">
+        <label>Source System<input id="sourceSystem" value="CORE_BANKING"></label>
+        <label>Source Payment ID<input id="sourcePaymentId" value="TRX-987654"></label>
+        <label>Debtor Customer ID<input id="customerId" value="CUST-001"></label>
+        <label>Debtor Name<input id="debtorName" value="John Smith"></label>
+        <label>Debtor IBAN<input id="debtorAccount" value="GR1601101250000000012300695"></label>
+        <label>Creditor Name<input id="creditorName" value="ABC Corporation"></label>
+        <label>Creditor Account<input id="creditorAccount" value="US12345678901234567890"></label>
+        <label>Creditor Agent BIC<input id="creditorBic" value="BOFAUS3N"></label>
+        <label>Amount<input id="amount" type="number" value="10000"></label>
+        <label>Currency<select id="currency"><option>USD</option><option>EUR</option><option>GBP</option></select></label>
+        <label>Charge Bearer<select id="charges"><option>SHA</option><option>OUR</option><option>BEN</option></select></label>
+        <label>Priority<select id="priority"><option>NORMAL</option><option>HIGH</option></select></label>
+        <label class="wide">Remittance Information<input id="remittance" value="Invoice 1234"></label>
+      </div>
+      <button id="sendBtn" class="primary">Send Payment to Hub</button>
+      <button id="resetBtn" class="secondary">Reset Demo</button>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title"><div><small>REQUEST PREVIEW</small><h3>Business API Payload</h3></div></div>
+      <pre id="requestPreview"></pre>
+    </article>
+  </div>
+
+  <article class="panel processing-panel">
+    <div class="panel-title"><div><small>ORCHESTRATION</small><h3>Payment Processing Pipeline</h3></div><span id="pipelineStatus" class="badge gray">READY</span></div>
+    <div id="pipeline" class="pipeline">
+      <div class="step" data-step="received"><span>1</span><b>Request Received</b><small>Payment API</small></div>
+      <i>→</i><div class="step" data-step="canonical"><span>2</span><b>Canonical Created</b><small>Canonical Factory</small></div>
+      <i>→</i><div class="step" data-step="validated"><span>3</span><b>Validated</b><small>Validation Engine</small></div>
+      <i>→</i><div class="step" data-step="routed"><span>4</span><b>Route Selected</b><small>Routing Engine</small></div>
+      <i>→</i><div class="step" data-step="generated"><span>5</span><b>pacs.008 Generated</b><small>ISO Engine</small></div>
+      <i>→</i><div class="step" data-step="sent"><span>6</span><b>Sent to SWIFT</b><small>Network Adapter</small></div>
+    </div>
+    <div id="decisionBox" class="decision hidden"></div>
+  </article>
+</section>
+
+<section id="payments" class="page">
+  <div class="eyebrow">OPERATIONS</div><h2>Payments</h2>
+  <div class="metrics"><article><small>Payments Today</small><h3 id="metricPayments">128,432</h3></article><article><small>Processing</small><h3>421</h3></article><article><small>Sent</small><h3>127,942</h3></article><article><small>Exceptions</small><h3>69</h3></article></div>
+  <article class="panel"><div class="table-wrap"><table><thead><tr><th>Payment ID</th><th>Source Ref</th><th>Direction</th><th>Amount</th><th>Rail</th><th>Creditor Agent</th><th>Status</th><th></th></tr></thead><tbody id="paymentsTable"><tr><td>PAY-DEMO-000001</td><td>TRX-123456</td><td>OUTGOING</td><td>5,000.00 EUR</td><td>SEPA</td><td>DEUTDEFF</td><td><span class="badge green">SENT</span></td><td><button class="link-btn" onclick="showExamplePayment()">Open</button></td></tr></tbody></table></div></article>
+</section>
+
+<section id="payment-detail" class="page">
+  <div class="eyebrow">BACK OFFICE VIEW</div>
+  <div class="detail-head"><div><h2 id="detailId">No simulated payment yet</h2><p id="detailSubtitle" class="lead">Run the Payment Simulator to create a payment.</p></div><span id="detailStatus" class="badge gray large">NO DATA</span></div>
+  <div class="tabs"><button class="tab active" data-tab="overviewTab">Overview</button><button class="tab" data-tab="routingTab">Routing</button><button class="tab" data-tab="messagesTab">Messages</button><button class="tab" data-tab="coreTab">Core</button><button class="tab" data-tab="auditTab">Audit</button></div>
+
+  <div id="overviewTab" class="tab-content active">
+    <div class="grid2"><article class="panel"><h3>Payment</h3><div id="paymentFacts" class="facts"><p>No data.</p></div></article><article class="panel"><h3>Parties</h3><div id="partyFacts" class="facts"><p>No data.</p></div></article></div>
+    <article class="panel"><h3>Lifecycle</h3><div id="lifecycle" class="timeline"><span>Waiting for simulation</span></div></article>
+  </div>
+
+  <div id="routingTab" class="tab-content"><article class="panel"><h3>Routing Decision</h3><div id="routingFacts" class="facts"><p>No routing decision yet.</p></div></article></div>
+
+  <div id="messagesTab" class="tab-content">
+    <article class="panel"><div class="panel-title"><div><small>ISO 20022</small><h3>Messages</h3></div><button id="viewXmlBtn" class="secondary" disabled>View XML</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Direction</th><th>Message Type</th><th>Message ID</th><th>Network</th><th>Status</th></tr></thead><tbody id="messageTable"><tr><td colspan="5">No messages generated.</td></tr></tbody></table></div>
+    </article>
+  </div>
+
+  <div id="coreTab" class="tab-content"><article class="panel"><h3>Core Interactions</h3><div id="coreInteractions" class="timeline vertical"><span>Waiting for simulation</span></div></article></div>
+  <div id="auditTab" class="tab-content"><article class="panel"><h3>Audit Trail</h3><div id="auditTrail" class="timeline vertical"><span>Waiting for simulation</span></div></article></div>
+</section>
+
+<section id="correspondents" class="page config-page">
+  <div class="eyebrow">CONFIGURATION</div><h2>Correspondent Banks</h2><p class="lead">Reference data used by the Routing Engine to determine intermediary/correspondent paths.</p>
+  <article class="panel"><table><thead><tr><th>ID</th><th>Bank</th><th>BIC</th><th>Currency</th><th>Priority</th><th>Status</th></tr></thead><tbody><tr><td>CORR-USD-01</td><td>JPMorgan Chase</td><td><b>CHASUS33</b></td><td>USD</td><td>1</td><td><span class="badge green">ACTIVE</span></td></tr><tr><td>CORR-GBP-01</td><td>Demo UK Correspondent</td><td>BARCGB22</td><td>GBP</td><td>1</td><td><span class="badge green">ACTIVE</span></td></tr></tbody></table></article>
+</section>
+
+<section id="nostros" class="page config-page">
+  <div class="eyebrow">CONFIGURATION</div><h2>Nostro Accounts</h2>
+  <article class="panel"><table><thead><tr><th>ID</th><th>Currency</th><th>Correspondent</th><th>Account</th><th>Status</th></tr></thead><tbody><tr><td><b>USD_NOSTRO_01</b></td><td>USD</td><td>CHASUS33</td><td>••••••4521</td><td><span class="badge green">ACTIVE</span></td></tr><tr><td>GBP_NOSTRO_01</td><td>GBP</td><td>BARCGB22</td><td>••••••8834</td><td><span class="badge green">ACTIVE</span></td></tr></tbody></table></article>
+</section>
+
+<section id="routing-rules" class="page config-page">
+  <div class="eyebrow">CONFIGURATION</div><h2>Routing Rules</h2>
+  <div class="rule"><span>Priority 10</span><b>USD Cross-Border Credit Transfer</b><code>IF currency = USD → rail = SWIFT, scheme = CBPR+, correspondent = CHASUS33, nostro = USD_NOSTRO_01</code></div>
+  <div class="rule"><span>Priority 20</span><b>EUR SEPA Eligible</b><code>IF currency = EUR AND destination ∈ SEPA → rail = SEPA, scheme = SCT</code></div>
+  <div class="rule"><span>Priority 30</span><b>GBP Cross-Border</b><code>IF currency = GBP → rail = SWIFT, correspondent = BARCGB22, nostro = GBP_NOSTRO_01</code></div>
+</section>
+
+<section id="fees" class="page config-page">
+  <div class="eyebrow">CONFIGURATION</div><h2>Fee / Route Cost Rules</h2><p class="lead">Demo routing costs. Customer pricing remains external to the Hub unless the implementation explicitly assigns that responsibility to it.</p>
+  <article class="panel"><table><thead><tr><th>Route</th><th>Currency</th><th>Network Cost</th><th>Correspondent Estimate</th><th>Charge Options</th></tr></thead><tbody><tr><td>SWIFT / CHASUS33</td><td>USD</td><td>2.50 USD</td><td>8.00 USD</td><td>SHA / OUR</td></tr><tr><td>SEPA SCT</td><td>EUR</td><td>0.08 EUR</td><td>—</td><td>SLEV</td></tr></tbody></table></article>
+</section>
+
+<section id="profiles" class="page config-page">
+  <div class="eyebrow">CONFIGURATION</div><h2>Network & Message Profiles</h2>
+  <div class="grid2"><article class="panel"><span class="badge blue">ACTIVE</span><h3>SWIFT CBPR+ Credit Transfer</h3><p>Rail: SWIFT<br>Scheme: CBPR+<br>Message: pacs.008<br>Profile: CBPR_PLUS_PACS008</p></article><article class="panel"><span class="badge blue">ACTIVE</span><h3>SEPA Credit Transfer</h3><p>Rail: SEPA<br>Scheme: SCT<br>Message: pacs.008<br>Profile: SEPA_SCT_PACS008</p></article></div>
 </section>
 
 <section id="architecture" class="page">
-  <p class="eyebrow">HIGH-LEVEL ARCHITECTURE</p><h2>Payment Hub architecture</h2><p class="lead">The Hub is the orchestration layer between banking systems and payment infrastructures.</p>
-  <div class="flow big"><div><b>Bank Ecosystem</b><span>Mobile / Web</span><span>Core Banking</span><span>ERP / Treasury</span></div><i>→</i><div class="hub"><b>Payment Hub</b><span>Payment API</span><span>Orchestration Engine</span><span>Canonical Model</span><span>Validation · Routing · ISO</span><span>Reconciliation</span></div><i>→</i><div><b>Networks</b><span>SWIFT</span><span>SEPA</span><span>TIPS / RT1</span><span>DIAS</span></div></div>
+  <div class="eyebrow">PRODUCT BLUEPRINT</div><h2>End-to-end architecture</h2>
+  <div class="arch"><div><b>Core / Channels</b><small>CreatePayment()</small></div><i>→</i><div class="hubbox"><b>Payment API</b><small>Canonical Factory</small><small>Validation Engine</small><small>Orchestration Engine</small></div><i>→</i><div class="hubbox"><b>Routing Engine</b><small>Correspondents</small><small>Nostros</small><small>Fees / Rules</small></div><i>→</i><div class="hubbox"><b>ISO Engine</b><small>Generate / Parse / Validate</small></div><i>→</i><div><b>Network Adapter</b><small>SWIFT / SEPA / TIPS / RT1</small></div></div>
 </section>
 
 <section id="canonical" class="page">
-  <p class="eyebrow">DOMAIN MODEL</p><h2>Canonical Payment Model</h2><p class="lead">A single internal representation of a payment, independent of source system, ISO version or payment rail.</p>
-  <div class="callout"><b>Payment ≠ Message</b><p>A payment is the business object. pacs.008, pacs.002, camt.056, camt.029 and pacs.004 are messages associated with its lifecycle.</p></div>
-  <div class="flow"><div>Core API</div><i>→</i><div class="hub">Canonical Payment</div><i>→</i><div>ISO Mapper</div><i>→</i><div>pacs.008</div></div>
-  <div class="grid4">
-    <article><b>Identity</b><code>PaymentHubId</code><code>CreationDate</code></article>
-    <article><b>Classification</b><code>PaymentType</code><code>Direction</code><code>Rail</code><code>Scheme</code></article>
-    <article><b>Amount</b><code>InstructedAmount</code><code>SettlementAmount</code><code>Currency</code></article>
-    <article><b>Parties</b><code>Debtor</code><code>Creditor</code><code>UltimateDebtor</code><code>UltimateCreditor</code></article>
-    <article><b>Agents</b><code>DebtorAgent</code><code>CreditorAgent</code><code>IntermediaryAgents</code></article>
-    <article><b>Identifiers</b><code>UETR</code><code>EndToEndId</code><code>InstrId</code><code>TxId</code></article>
-    <article><b>Payment Details</b><code>Purpose</code><code>CategoryPurpose</code><code>RemittanceInformation</code><code>ChargeBearer</code></article>
-    <article><b>State</b><code>PaymentStatus</code><code>NetworkStatus</code><code>CoreStatus</code><code>SettlementStatus</code><code>ReconciliationStatus</code></article>
-  </div>
+  <div class="eyebrow">DOMAIN MODEL</div><h2>Canonical Payment Model</h2>
+  <div class="callout"><b>Common internal representation</b><p>Everything entering the Hub is transformed into a payment-centric internal model. The model carries transaction facts; routing enriches it with processing decisions and network-specific references.</p></div>
+  <div class="grid4"><article><b>Identity</b><code>PaymentHubId</code><code>SourcePaymentId</code></article><article><b>Payment</b><code>Direction</code><code>Type</code><code>Amount / Currency</code></article><article><b>Parties</b><code>Debtor</code><code>Creditor</code><code>Accounts</code><code>Agents</code></article><article><b>Processing</b><code>Priority</code><code>Charges</code><code>RequestedExecutionDate</code></article></div>
 </section>
 
 <section id="engines" class="page">
-  <p class="eyebrow">PROCESSING LAYER</p><h2>Payment Hub Engines</h2><p class="lead">The Orchestration Engine coordinates specialized engines and adapters throughout the lifecycle.</p>
-  <div class="engineflow"><div>1<br><b>Payment API</b></div><i>→</i><div>2<br><b>Canonical Factory</b></div><i>→</i><div>3<br><b>Validation</b></div><i>→</i><div>4<br><b>Core Adapter</b></div><i>→</i><div>5<br><b>Routing</b></div><i>→</i><div>6<br><b>ISO Engine</b></div><i>→</i><div>7<br><b>Network Adapter</b></div></div>
-  <div class="callout"><b>Orchestration Engine</b><p>Controls workflow, invokes engines, handles responses and exceptions, updates lifecycle state and determines the next action.</p></div>
-</section>
-
-<section id="outgoing" class="page">
-  <p class="eyebrow">PAYMENT FLOW</p><h2>Outgoing Payment</h2><p class="lead">The payment originates from a banking channel or Core Banking System.</p>
-  <div class="engineflow"><div>01<br><b>Payment Request</b><small>POST /payments</small></div><i>→</i><div>02<br><b>Create Payment</b><small>Canonical</small></div><i>→</i><div>03<br><b>Validate</b><small>Business + Core</small></div><i>→</i><div>04<br><b>Route</b><small>Rail / Scheme</small></div><i>→</i><div>05<br><b>Generate ISO</b><small>pacs.008</small></div><i>→</i><div>06<br><b>Send</b><small>Network Adapter</small></div></div>
-</section>
-
-<section id="incoming" class="page">
-  <p class="eyebrow">PAYMENT FLOW</p><h2>Incoming Payment</h2><p class="lead">The ISO message is received first and transformed into the internal Canonical Payment.</p>
-  <div class="engineflow"><div>01<br><b>Receive ISO</b></div><i>→</i><div>02<br><b>Parse</b></div><i>→</i><div>03<br><b>Create Payment</b></div><i>→</i><div>04<br><b>Validate</b></div><i>→</i><div>05<br><b>Core Posting</b></div><i>→</i><div>06<br><b>Respond</b></div></div>
-  <div class="grid2"><article><b>OUTGOING</b><p>Business Request → Canonical → ISO</p></article><article><b>INCOMING</b><p>ISO → Canonical → Core Banking</p></article></div>
-</section>
-
-<section id="integrations" class="page">
-  <p class="eyebrow">INTEGRATION LAYER</p><h2>Adapters isolate the Hub from external systems.</h2>
-  <div class="grid2"><article><b>Core Banking Adapter</b><code>ValidateAccount()</code><code>CheckFunds()</code><code>ReserveFunds()</code><code>DebitAccount()</code><code>CreditAccount()</code><code>ReverseTransaction()</code></article><article><b>Network Adapter</b><code>SWIFT Adapter</code><code>SEPA Adapter</code><code>TIPS Adapter</code><code>RT1 Adapter</code><code>DIAS Adapter</code></article></div>
-</section>
-
-<section id="reconciliation" class="page">
-  <p class="eyebrow">RECONCILIATION</p><h2>One payment. Multiple sources of truth.</h2><p class="lead">Reconciliation verifies that the Hub, Core Banking, network and settlement information agree.</p>
-  <div class="callout"><b>PAY-000001</b><p>Hub Payment ↔ Core Posting ↔ Network Transaction ↔ Nostro / Statement</p></div>
-  <div class="grid3"><article><b>Matched</b><p>All required records agree.</p></article><article><b>Partially Matched</b><p>Expected records are pending or missing.</p></article><article><b>Exception</b><p>Mismatch, missing posting, amount difference or missing settlement.</p></article></div>
-</section>
-
-<section id="operations" class="page">
-  <p class="eyebrow">OPERATIONS UI</p><h2>Payment operations from a single interface.</h2>
-  <div class="grid4"><article><small>Payments Today</small><h3>128,432</h3></article><article><small>Total Value</small><h3>€1.28B</h3></article><article><small>Processing</small><h3>421</h3></article><article><small>Exceptions</small><h3>69</h3></article></div>
-  <div class="callout"><b>PAY-20260916-000001 · €12,500 EUR</b><p>Created → Validated → Core Debited → pacs.008 Generated → Sent to SWIFT → Settlement → Reconciliation</p></div>
-</section>
-
-<section id="mvp" class="page">
-  <p class="eyebrow">PRODUCT DELIVERY</p><h2>Payment Hub MVP v1.0</h2>
-  <div class="callout"><b>MVP scope</b><p>End-to-end SWIFT CBPR+ credit transfer orchestration through a generic Core Banking integration, centralized ISO 20022 message management, lifecycle tracking, operations UI and basic reconciliation.</p></div>
-  <div class="grid2"><article><b>In Scope</b><p>Incoming / Outgoing Credit Transfer<br>pacs.008 / pacs.002<br>Generic Core Adapter<br>Payment lifecycle<br>Operations UI<br>Basic reconciliation</p></article><article><b>Later</b><p>pacs.004 · camt.056 · camt.029<br>pacs.009 · camt.053 / 054<br>SEPA SCT · SCT Inst<br>Advanced routing</p></article></div>
-</section>
-
-<section id="roadmap" class="page">
-  <p class="eyebrow">ROADMAP</p><h2>From MVP to multi-rail payment platform.</h2>
-  <div class="grid4"><article><b>Phase 1 · Foundation</b><p>Canonical Model, orchestration, ISO engine, SWIFT, Core Adapter.</p></article><article><b>Phase 2 · Operations</b><p>Returns, recalls, exceptions, advanced reconciliation.</p></article><article><b>Phase 3 · Multi-Rail</b><p>SEPA SCT, SCT Inst, TIPS, RT1 and domestic schemes.</p></article><article><b>Phase 4 · Intelligence</b><p>Smart routing, analytics, liquidity monitoring and automation.</p></article></div>
+  <div class="eyebrow">PROCESSING LAYER</div><h2>Engines & responsibilities</h2>
+  <div class="grid3"><article><b>Orchestration Engine</b><p>Coordinates the workflow and decides what happens next.</p></article><article><b>Validation Engine</b><p>Runs structural, business and configuration validations.</p></article><article><b>Routing Engine</b><p>Selects rail, scheme, correspondent, Nostro and processing profile.</p></article><article><b>ISO 20022 Engine</b><p>Maps Canonical + Routing Decision into the required ISO message.</p></article><article><b>Network Adapter</b><p>Handles connectivity to the selected payment infrastructure.</p></article><article><b>Reconciliation Engine</b><p>Matches Hub, Core, network and settlement records.</p></article></div>
 </section>
 </main>
+
+<div id="xmlModal" class="modal hidden"><div class="modal-card"><div class="panel-title"><div><small>GENERATED MESSAGE</small><h3>pacs.008 Preview</h3></div><button id="closeModal" class="secondary">Close</button></div><pre id="xmlPreview"></pre></div></div>
 <script src="app.js"></script>
 </body></html>
