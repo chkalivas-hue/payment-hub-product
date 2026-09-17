@@ -32,8 +32,8 @@
 
 <section id="demo" class="page active">
   <div class="eyebrow">END-TO-END DEMO</div>
-  <h2>Outgoing SWIFT Payment Simulator</h2>
-  <p class="lead">Simulate a payment instruction received from Core Banking and watch the Hub validate, route, generate a pacs.008 and expose the result to the Back Office.</p>
+  <h2>Outgoing Payment Simulator</h2>
+  <p class="lead">Simulate an outgoing payment instruction received from Core Banking and watch the Hub validate, route, generate the required payment message and expose the result to the Back Office.</p>
 
   <div class="demo-grid">
     <article class="panel">
@@ -70,8 +70,8 @@
       <i>→</i><div class="step" data-step="canonical"><span>2</span><b>Canonical Created</b><small>Canonical Factory</small></div>
       <i>→</i><div class="step" data-step="validated"><span>3</span><b>Validated</b><small>Validation Engine</small></div>
       <i>→</i><div class="step" data-step="routed"><span>4</span><b>Route Selected</b><small>Routing Engine</small></div>
-      <i>→</i><div class="step" data-step="generated"><span>5</span><b>pacs.008 Generated</b><small>ISO Engine</small></div>
-      <i>→</i><div class="step" data-step="sent"><span>6</span><b>Sent to SWIFT</b><small>Network Adapter</small></div>
+      <i>→</i><div class="step" data-step="generated"><span>5</span><b>Message Generated</b><small>ISO Engine</small></div>
+      <i>→</i><div class="step" data-step="sent"><span>6</span><b>Sent to Network</b><small>Network Adapter</small></div>
     </div>
     <div id="decisionBox" class="decision hidden"></div>
   </article>
@@ -79,8 +79,25 @@
 
 <section id="payments" class="page">
   <div class="eyebrow">OPERATIONS</div><h2>Payments</h2>
-  <div class="metrics"><article><small>Payments Today</small><h3 id="metricPayments">128,432</h3></article><article><small>Processing</small><h3>421</h3></article><article><small>Sent</small><h3>127,942</h3></article><article><small>Exceptions</small><h3>69</h3></article></div>
-  <article class="panel"><div class="table-wrap"><table><thead><tr><th>Payment ID</th><th>Source Ref</th><th>Direction</th><th>Amount</th><th>Rail</th><th>Creditor Agent</th><th>Status</th><th></th></tr></thead><tbody id="paymentsTable"><tr><td>PAY-DEMO-000001</td><td>TRX-123456</td><td>OUTGOING</td><td>5,000.00 EUR</td><td>SEPA</td><td>DEUTDEFF</td><td><span class="badge green">SENT</span></td><td><button class="link-btn" onclick="showExamplePayment()">Open</button></td></tr></tbody></table></div></article>
+  <div class="counter-section">
+    <div class="section-heading"><div><small>DEMO COUNTERS</small><h3>Outgoing Payments</h3></div><span class="badge blue">LIVE DEMO</span></div>
+    <div class="metrics">
+      <article><small>Total Outgoing</small><h3 id="outTotal">0</h3></article>
+      <article><small>Processing</small><h3 id="outProcessing">0</h3></article>
+      <article><small>Sent</small><h3 id="outSent">0</h3></article>
+      <article><small>Exceptions</small><h3 id="outExceptions">0</h3></article>
+    </div>
+  </div>
+  <div class="counter-section">
+    <div class="section-heading"><div><small>DEMO COUNTERS</small><h3>Incoming Payments</h3></div><span class="badge gray">NEXT DEMO</span></div>
+    <div class="metrics">
+      <article><small>Total Incoming</small><h3 id="inTotal">0</h3></article>
+      <article><small>Processing</small><h3 id="inProcessing">0</h3></article>
+      <article><small>Completed</small><h3 id="inCompleted">0</h3></article>
+      <article><small>Exceptions</small><h3 id="inExceptions">0</h3></article>
+    </div>
+  </div>
+  <article class="panel"><div class="table-wrap"><table><thead><tr><th>Payment ID</th><th>Source Ref</th><th>Direction</th><th>Amount</th><th>Rail</th><th>Creditor Agent</th><th>Status</th><th></th></tr></thead><tbody id="paymentsTable"><tr id="emptyPaymentsRow"><td colspan="8">No demo payments sent yet.</td></tr></tbody></table></div></article>
 </section>
 
 <section id="payment-detail" class="page">
