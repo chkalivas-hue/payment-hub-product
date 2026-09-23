@@ -19,6 +19,7 @@
     <button class="nav" data-page="routing-rules">Routing Rules</button>
     <button class="nav" data-page="fees">Fee / Cost Rules</button>
     <button class="nav" data-page="profiles">Message Profiles</button>
+    <button class="nav" data-page="compliance-config">AML / Anti-Fraud</button>
     <label>PRODUCT BLUEPRINT</label>
     <button class="nav" data-page="architecture">Architecture</button>
     <button class="nav" data-page="canonical">Canonical Model</button>
@@ -33,7 +34,7 @@
 <section id="demo" class="page active">
   <div class="eyebrow">END-TO-END DEMO</div>
   <h2>Outgoing Payment Simulator</h2>
-  <p class="lead">Simulate an outgoing payment instruction received from Core Banking and watch the Hub validate, route, generate the required payment message and expose the result to the Back Office.</p>
+  <p class="lead">Simulate an outgoing payment instruction received from Core Banking and watch the Hub validate it, perform AML and Anti-Fraud API checks, route it, generate the required payment message and expose the result to the Back Office.</p>
 
   <div class="demo-grid">
     <article class="panel">
@@ -69,9 +70,10 @@
       <div class="step" data-step="received"><span>1</span><b>Request Received</b><small>Payment API</small></div>
       <i>→</i><div class="step" data-step="canonical"><span>2</span><b>Canonical Created</b><small>Canonical Factory</small></div>
       <i>→</i><div class="step" data-step="validated"><span>3</span><b>Validated</b><small>Validation Engine</small></div>
-      <i>→</i><div class="step" data-step="routed"><span>4</span><b>Route Selected</b><small>Routing Engine</small></div>
-      <i>→</i><div class="step" data-step="generated"><span>5</span><b>Message Generated</b><small>ISO Engine</small></div>
-      <i>→</i><div class="step" data-step="sent"><span>6</span><b>Sent to Network</b><small>Network Adapter</small></div>
+      <i>→</i><div class="step" data-step="compliance"><span>4</span><b>AML / Fraud Cleared</b><small>Validation Engine · APIs</small></div>
+      <i>→</i><div class="step" data-step="routed"><span>5</span><b>Route Selected</b><small>Routing Engine</small></div>
+      <i>→</i><div class="step" data-step="generated"><span>6</span><b>Message Generated</b><small>ISO Engine</small></div>
+      <i>→</i><div class="step" data-step="sent"><span>7</span><b>Sent to Network</b><small>Network Adapter</small></div>
     </div>
     <div id="decisionBox" class="decision hidden"></div>
   </article>
@@ -103,13 +105,16 @@
 <section id="payment-detail" class="page">
   <div class="eyebrow">BACK OFFICE VIEW</div>
   <div class="detail-head"><div><h2 id="detailId">No simulated payment yet</h2><p id="detailSubtitle" class="lead">Run the Payment Simulator to create a payment.</p></div><span id="detailStatus" class="badge gray large">NO DATA</span></div>
-  <div class="tabs"><button class="tab active" data-tab="overviewTab">Overview</button><button class="tab" data-tab="routingTab">Routing</button><button class="tab" data-tab="messagesTab">Messages</button><button class="tab" data-tab="coreTab">Core</button><button class="tab" data-tab="auditTab">Audit</button></div>
+  <div class="tabs"><button class="tab active" data-tab="overviewTab">Overview</button><button class="tab" data-tab="complianceTab">AML / Fraud</button><button class="tab" data-tab="routingTab">Routing</button><button class="tab" data-tab="messagesTab">Messages</button><button class="tab" data-tab="coreTab">Core</button><button class="tab" data-tab="auditTab">Audit</button></div>
 
   <div id="overviewTab" class="tab-content active">
     <div class="grid2"><article class="panel"><h3>Payment</h3><div id="paymentFacts" class="facts"><p>No data.</p></div></article><article class="panel"><h3>Parties</h3><div id="partyFacts" class="facts"><p>No data.</p></div></article></div>
     <article class="panel"><h3>Lifecycle</h3><div id="lifecycle" class="timeline"><span>Waiting for simulation</span></div></article>
   </div>
 
+  <div id="complianceTab" class="tab-content">
+    <article class="panel"><h3>AML & Anti-Fraud Controls</h3><div id="complianceFacts" class="facts"><p>No checks executed yet.</p></div></article>
+  </div>
   <div id="routingTab" class="tab-content"><article class="panel"><h3>Routing Decision</h3><div id="routingFacts" class="facts"><p>No routing decision yet.</p></div></article></div>
 
   <div id="messagesTab" class="tab-content">
@@ -149,20 +154,45 @@
   <div class="grid2"><article class="panel"><span class="badge blue">ACTIVE</span><h3>SWIFT CBPR+ Credit Transfer</h3><p>Rail: SWIFT<br>Scheme: CBPR+<br>Message: pacs.008<br>Profile: CBPR_PLUS_PACS008</p></article><article class="panel"><span class="badge blue">ACTIVE</span><h3>SEPA Credit Transfer</h3><p>Rail: SEPA<br>Scheme: SCT<br>Message: pacs.008<br>Profile: SEPA_SCT_PACS008</p></article></div>
 </section>
 
+<section id="compliance-config" class="page config-page">
+  <div class="eyebrow">CONFIGURATION</div><h2>AML & Anti-Fraud Integrations</h2>
+  <p class="lead">Mandatory pre-posting controls orchestrated through the Validation Engine. The Hub sends the payment context to external AML and Anti-Fraud APIs before a posting request is allowed.</p>
+  <div class="grid2">
+    <article class="panel"><span class="badge green">ACTIVE</span><h3>AML Screening API</h3>
+      <div class="facts">
+        <div class="fact"><small>Execution</small><b>Synchronous · Pre-posting</b></div>
+        <div class="fact"><small>Timeout</small><b>3,000 ms</b></div>
+        <div class="fact"><small>Allow Decision</small><b>CLEAR</b></div>
+        <div class="fact"><small>Review Decision</small><b>HOLD / MANUAL REVIEW</b></div>
+      </div>
+    </article>
+    <article class="panel"><span class="badge green">ACTIVE</span><h3>Anti-Fraud API</h3>
+      <div class="facts">
+        <div class="fact"><small>Execution</small><b>Synchronous · Pre-posting</b></div>
+        <div class="fact"><small>Timeout</small><b>2,000 ms</b></div>
+        <div class="fact"><small>Allow Decision</small><b>APPROVE</b></div>
+        <div class="fact"><small>Reject Decision</small><b>DECLINE</b></div>
+      </div>
+    </article>
+  </div>
+  <div class="callout"><b>Posting Gate</b><p>No Core posting request is allowed until all mandatory controls return an acceptable result. HOLD, DECLINE, timeout and technical-error handling will be controlled by configuration.</p></div>
+  <article class="panel"><h3>Pre-posting sequence</h3><div class="compliance-flow"><b>Canonical Payment</b><i>→</i><b>Business Validation</b><i>→</i><b>AML API</b><i>→</i><b>Anti-Fraud API</b><i>→</i><b>Posting Gate</b><i>→</i><b>Core Posting Eligible</b></div></article>
+</section>
+
 <section id="architecture" class="page">
-  <div class="eyebrow">PRODUCT BLUEPRINT</div><h2>End-to-end architecture</h2>
+  <div class="eyebrow">PRODUCT BLUEPRINT</div><h2>End-to-end architecture</h2><div class="callout"><b>Mandatory control gate</b><p>Payment API → Canonical Payment → Validation Engine → AML API → Anti-Fraud API → Posting Gate → Core Posting / Routing → ISO Engine → Network Adapter.</p></div>
   <div class="arch"><div><b>Core / Channels</b><small>CreatePayment()</small></div><i>→</i><div class="hubbox"><b>Payment API</b><small>Canonical Factory</small><small>Validation Engine</small><small>Orchestration Engine</small></div><i>→</i><div class="hubbox"><b>Routing Engine</b><small>Correspondents</small><small>Nostros</small><small>Fees / Rules</small></div><i>→</i><div class="hubbox"><b>ISO Engine</b><small>Generate / Parse / Validate</small></div><i>→</i><div><b>Network Adapter</b><small>SWIFT / SEPA / TIPS / RT1</small></div></div>
 </section>
 
 <section id="canonical" class="page">
   <div class="eyebrow">DOMAIN MODEL</div><h2>Canonical Payment Model</h2>
   <div class="callout"><b>Common internal representation</b><p>Everything entering the Hub is transformed into a payment-centric internal model. The model carries transaction facts; routing enriches it with processing decisions and network-specific references.</p></div>
-  <div class="grid4"><article><b>Identity</b><code>PaymentHubId</code><code>SourcePaymentId</code></article><article><b>Payment</b><code>Direction</code><code>Type</code><code>Amount / Currency</code></article><article><b>Parties</b><code>Debtor</code><code>Creditor</code><code>Accounts</code><code>Agents</code></article><article><b>Processing</b><code>Priority</code><code>Charges</code><code>RequestedExecutionDate</code></article></div>
+  <div class="grid4"><article><b>Identity</b><code>PaymentHubId</code><code>SourcePaymentId</code></article><article><b>Payment</b><code>Direction</code><code>Type</code><code>Amount / Currency</code></article><article><b>Parties</b><code>Debtor</code><code>Creditor</code><code>Accounts</code><code>Agents</code></article><article><b>Processing</b><code>Priority</code><code>Charges</code><code>RequestedExecutionDate</code><code>AML Status</code><code>Fraud Status</code><code>Posting Gate Status</code></article></div>
 </section>
 
 <section id="engines" class="page">
   <div class="eyebrow">PROCESSING LAYER</div><h2>Engines & responsibilities</h2>
-  <div class="grid3"><article><b>Orchestration Engine</b><p>Coordinates the workflow and decides what happens next.</p></article><article><b>Validation Engine</b><p>Runs structural, business and configuration validations.</p></article><article><b>Routing Engine</b><p>Selects rail, scheme, correspondent, Nostro and processing profile.</p></article><article><b>ISO 20022 Engine</b><p>Maps Canonical + Routing Decision into the required ISO message.</p></article><article><b>Network Adapter</b><p>Handles connectivity to the selected payment infrastructure.</p></article><article><b>Reconciliation Engine</b><p>Matches Hub, Core, network and settlement records.</p></article></div>
+  <div class="grid3"><article><b>Orchestration Engine</b><p>Coordinates the workflow and ensures mandatory AML / Anti-Fraud clearance before any Core posting request.</p></article><article><b>Validation Engine</b><p>Runs structural, business and configuration validations, calls AML and Anti-Fraud APIs, and controls the pre-posting decision gate.</p></article><article><b>Routing Engine</b><p>Selects rail, scheme, correspondent, Nostro and processing profile.</p></article><article><b>ISO 20022 Engine</b><p>Maps Canonical + Routing Decision into the required ISO message.</p></article><article><b>Network Adapter</b><p>Handles connectivity to the selected payment infrastructure.</p></article><article><b>Reconciliation Engine</b><p>Matches Hub, Core, network and settlement records.</p></article></div>
 </section>
 </main>
 

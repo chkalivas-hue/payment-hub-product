@@ -98,9 +98,16 @@ async function simulate(){
      setStep(s,'active'); await wait(350); setStep(s,'done');
    }
 
+   // Demo: external AML and Anti-Fraud API calls executed before posting eligibility.
+   setStep('compliance','active'); await wait(500);
+   p.aml={status:'CLEAR',provider:'AML Screening API',decisionId:'AML-'+String(Date.now()).slice(-7),latency:'184 ms'};
+   p.fraud={status:'APPROVE',provider:'Anti-Fraud API',decisionId:'FRD-'+String(Date.now()).slice(-7),latency:'126 ms'};
+   p.postingGate='CLEARED';
+   setStep('compliance','done');
+
    p.route=routePayment(p);
    setStep('routed','active'); await wait(400); setStep('routed','done');
-   $('decisionBox').innerHTML=`<b>Routing Decision</b><br>Rail: <b>${p.route.rail}</b> · Scheme: <b>${p.route.scheme}</b> · Correspondent: <b>${p.route.correspondent||'Direct'}</b> · Nostro: <b>${p.route.nostro||'N/A'}</b> · Profile: <b>${p.route.profile}</b> · Estimated route cost: <b>${p.route.routeCost}</b>`;
+   $('decisionBox').innerHTML=`<b>Pre-Posting Gate: CLEARED</b> · AML: CLEAR · Anti-Fraud: APPROVE<br><br><b>Routing Decision</b><br>Rail: <b>${p.route.rail}</b> · Scheme: <b>${p.route.scheme}</b> · Correspondent: <b>${p.route.correspondent||'Direct'}</b> · Nostro: <b>${p.route.nostro||'N/A'}</b> · Profile: <b>${p.route.profile}</b> · Estimated route cost: <b>${p.route.routeCost}</b>`;
    $('decisionBox').classList.remove('hidden');
 
    setStep('generated','active'); await wait(400); currentXml=makeXml(p); setStep('generated','done');
@@ -134,10 +141,11 @@ function populateBO(p){
  $('detailStatus').className='badge green large';$('detailStatus').textContent='SENT';
  $('paymentFacts').innerHTML=facts([['Source System',p.sourceSystem],['Source Payment ID',p.sourcePaymentId],['Amount',`${p.amount.toFixed(2)} ${p.currency}`],['Charge Bearer',p.chargeBearer],['Priority',p.priority],['Rail',p.route.rail]]);
  $('partyFacts').innerHTML=facts([['Debtor',p.debtor.name],['Debtor Account',p.debtor.account],['Creditor',p.creditor.name],['Creditor Account',p.creditor.account],['Creditor Agent',p.creditor.agentBic],['Remittance',p.remittanceInformation]]);
+ $('complianceFacts').innerHTML=facts([['AML Decision',p.aml.status],['AML Provider',p.aml.provider],['AML Decision ID',p.aml.decisionId],['AML Latency',p.aml.latency],['Anti-Fraud Decision',p.fraud.status],['Anti-Fraud Provider',p.fraud.provider],['Fraud Decision ID',p.fraud.decisionId],['Fraud Latency',p.fraud.latency],['Posting Gate',p.postingGate]]);
  $('routingFacts').innerHTML=facts([['Rail',p.route.rail],['Scheme',p.route.scheme],['Correspondent',p.route.correspondent?`${p.route.correspondentBank} (${p.route.correspondent})`:'Direct'],['Nostro',p.route.nostro||'N/A'],['Message Profile',p.route.profile],['Estimated Route Cost',p.route.routeCost]]);
- const events=['Payment Received','Canonical Payment Created','Validation Successful',`Route Selected: ${p.route.rail} / ${p.route.scheme}`,'Payment Message Generated',`Sent to ${p.route.network}`];
+ const events=['Payment Received','Canonical Payment Created','Validation Successful','AML Screening: CLEAR','Anti-Fraud: APPROVE','Posting Gate: CLEARED',`Route Selected: ${p.route.rail} / ${p.route.scheme}`,'Payment Message Generated',`Sent to ${p.route.network}`];
  $('lifecycle').innerHTML=events.map(x=>`<span>✓ ${x}</span>`).join('');
- $('coreInteractions').innerHTML=['✓ CreatePayment request received','✓ Debtor/account data accepted','✓ Payment reference correlated: '+p.sourcePaymentId].map(x=>`<span>${x}</span>`).join('');
+ $('coreInteractions').innerHTML=['✓ CreatePayment request received','✓ Debtor/account data accepted','✓ AML screening: CLEAR','✓ Anti-Fraud: APPROVE','✓ Posting Gate: CLEARED','✓ Core posting eligible','✓ Payment reference correlated: '+p.sourcePaymentId].map(x=>`<span>${x}</span>`).join('');
  $('auditTrail').innerHTML=events.map((x,i)=>`<span>${new Date(p.createdAt.getTime()+i*500).toLocaleTimeString()} · ${x}</span>`).join('');
  $('messageTable').innerHTML=`<tr><td>OUT</td><td><b>pacs.008</b></td><td>${p.messageId}</td><td>${p.route.network}</td><td><span class="badge green">SENT</span></td></tr>`;
  $('viewXmlBtn').disabled=false;

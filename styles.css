@@ -4,3 +4,7 @@
 .section-heading small{color:var(--muted);font-size:10px;font-weight:800;letter-spacing:1px}
 .section-heading h3{margin:4px 0 0;font-size:21px}
 .primary:disabled{opacity:.65;cursor:wait}
+
+.compliance-flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.compliance-flow b{background:#f0f6ff;border:1px solid #cfe0fb;padding:12px 14px;border-radius:9px;font-size:12px}
+.compliance-flow i{font-style:normal;color:var(--blue);font-size:18px}
