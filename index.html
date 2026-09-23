@@ -139,56 +139,32 @@
 </section>
 
 <section id="correspondents" class="page config-page">
-  <div class="eyebrow">CONFIGURATION</div><h2>Correspondent Banks</h2><p class="lead">Reference data used by the Routing Engine to determine intermediary/correspondent paths.</p>
-  <article class="panel"><table><thead><tr><th>ID</th><th>Bank</th><th>BIC</th><th>Currency</th><th>Priority</th><th>Status</th></tr></thead><tbody><tr><td>CORR-USD-01</td><td>JPMorgan Chase</td><td><b>CHASUS33</b></td><td>USD</td><td>1</td><td><span class="badge green">ACTIVE</span></td></tr><tr><td>CORR-GBP-01</td><td>Demo UK Correspondent</td><td>BARCGB22</td><td>GBP</td><td>1</td><td><span class="badge green">ACTIVE</span></td></tr></tbody></table></article>
-</section>
+<div class="eyebrow">CONFIGURATION</div><h2>Correspondent Banks</h2><p class="lead">Editable demo reference data used directly by the Routing Engine.</p>
+<article class="panel config-editor"><h3>USD Correspondent</h3><div class="edit-grid">
+<label>Bank<input id="cfgUsdBank" value="JPMorgan Chase"></label><label>BIC<input id="cfgUsdBic" value="CHASUS33"></label><label>Nostro ID<input id="cfgUsdNostro" value="USD_NOSTRO_01"></label></div>
+<h3>GBP Correspondent</h3><div class="edit-grid"><label>Bank<input id="cfgGbpBank" value="Demo UK Correspondent"></label><label>BIC<input id="cfgGbpBic" value="BARCGB22"></label><label>Nostro ID<input id="cfgGbpNostro" value="GBP_NOSTRO_01"></label></div>
+<div class="config-actions"><button class="primary config-save">Save Configuration</button><button class="secondary config-reset">Reset Defaults</button><span class="configSaved"></span></div></article></section>
 
-<section id="nostros" class="page config-page">
-  <div class="eyebrow">CONFIGURATION</div><h2>Nostro Accounts</h2>
-  <article class="panel"><table><thead><tr><th>ID</th><th>Currency</th><th>Correspondent</th><th>Account</th><th>Status</th></tr></thead><tbody><tr><td><b>USD_NOSTRO_01</b></td><td>USD</td><td>CHASUS33</td><td>••••••4521</td><td><span class="badge green">ACTIVE</span></td></tr><tr><td>GBP_NOSTRO_01</td><td>GBP</td><td>BARCGB22</td><td>••••••8834</td><td><span class="badge green">ACTIVE</span></td></tr></tbody></table></article>
-</section>
+<section id="nostros" class="page config-page"><div class="eyebrow">CONFIGURATION</div><h2>Nostro Accounts</h2><p class="lead">Nostro identifiers used by the selected route. Changes are used by the next simulated payment.</p>
+<article class="panel config-editor"><div class="edit-grid"><label>USD Nostro ID<input id="cfgUsdNostro2" value="USD_NOSTRO_01"></label><label>USD Account Display<input id="cfgUsdAccount" value="••••••4521"></label><label>GBP Nostro ID<input id="cfgGbpNostro2" value="GBP_NOSTRO_01"></label><label>GBP Account Display<input id="cfgGbpAccount" value="••••••8834"></label></div><div class="config-actions"><button class="primary config-save">Save Configuration</button><button class="secondary config-reset">Reset Defaults</button><span class="configSaved"></span></div></article></section>
 
-<section id="routing-rules" class="page config-page">
-  <div class="eyebrow">CONFIGURATION</div><h2>Routing Rules</h2>
-  <div class="rule"><span>Priority 10</span><b>USD Cross-Border Credit Transfer</b><code>IF currency = USD → rail = SWIFT, scheme = CBPR+, correspondent = CHASUS33, nostro = USD_NOSTRO_01</code></div>
-  <div class="rule"><span>Priority 20</span><b>EUR SEPA Eligible</b><code>IF currency = EUR AND destination ∈ SEPA → rail = SEPA, scheme = SCT</code></div>
-  <div class="rule"><span>Priority 30</span><b>GBP Cross-Border</b><code>IF currency = GBP → rail = SWIFT, correspondent = BARCGB22, nostro = GBP_NOSTRO_01</code></div>
-</section>
+<section id="routing-rules" class="page config-page"><div class="eyebrow">CONFIGURATION</div><h2>Routing Rules</h2><p class="lead">The simulator reads these values at runtime. Change a route, save it, and the next payment will follow the new configuration.</p>
+<article class="panel config-editor"><div class="edit-grid">
+<label>USD Rail<input id="cfgUsdRail" value="SWIFT"></label><label>USD Scheme<input id="cfgUsdScheme" value="CBPR+"></label><label>USD Network<input id="cfgUsdNetwork" value="SWIFT"></label><label>USD Profile<input id="cfgUsdProfile" value="CBPR_PLUS_PACS008"></label>
+<label>EUR Rail<input id="cfgEurRail" value="SEPA"></label><label>EUR Scheme<input id="cfgEurScheme" value="SCT"></label><label>EUR Network<input id="cfgEurNetwork" value="SEPA"></label><label>EUR Profile<input id="cfgEurProfile" value="SEPA_SCT_PACS008"></label>
+<label>GBP Rail<input id="cfgGbpRail" value="SWIFT"></label><label>GBP Scheme<input id="cfgGbpScheme" value="CBPR+"></label><label>GBP Network<input id="cfgGbpNetwork" value="SWIFT"></label><label>GBP Profile<input id="cfgGbpProfile" value="CBPR_PLUS_PACS008"></label></div>
+<div class="config-actions"><button class="primary config-save">Save Configuration</button><button class="secondary config-reset">Reset Defaults</button><span class="configSaved"></span></div></article></section>
 
-<section id="fees" class="page config-page">
-  <div class="eyebrow">CONFIGURATION</div><h2>Fee / Route Cost Rules</h2><p class="lead">Demo routing costs. Customer pricing remains external to the Hub unless the implementation explicitly assigns that responsibility to it.</p>
-  <article class="panel"><table><thead><tr><th>Route</th><th>Currency</th><th>Network Cost</th><th>Correspondent Estimate</th><th>Charge Options</th></tr></thead><tbody><tr><td>SWIFT / CHASUS33</td><td>USD</td><td>2.50 USD</td><td>8.00 USD</td><td>SHA / OUR</td></tr><tr><td>SEPA SCT</td><td>EUR</td><td>0.08 EUR</td><td>—</td><td>SLEV</td></tr></tbody></table></article>
-</section>
+<section id="fees" class="page config-page"><div class="eyebrow">CONFIGURATION</div><h2>Fee / Route Cost Rules</h2><p class="lead">Editable route-cost estimates. These values are reflected in the Routing Decision and payment details.</p>
+<article class="panel config-editor"><div class="edit-grid"><label>USD Route Cost<input id="cfgUsdCost" value="10.50 USD"></label><label>EUR Route Cost<input id="cfgEurCost" value="0.08 EUR"></label><label>GBP Route Cost<input id="cfgGbpCost" value="7.50 GBP"></label></div><div class="config-actions"><button class="primary config-save">Save Configuration</button><button class="secondary config-reset">Reset Defaults</button><span class="configSaved"></span></div></article></section>
 
-<section id="profiles" class="page config-page">
-  <div class="eyebrow">CONFIGURATION</div><h2>Network & Message Profiles</h2>
-  <div class="grid2"><article class="panel"><span class="badge blue">ACTIVE</span><h3>SWIFT CBPR+ Credit Transfer</h3><p>Rail: SWIFT<br>Scheme: CBPR+<br>Message: pacs.008<br>Profile: CBPR_PLUS_PACS008</p></article><article class="panel"><span class="badge blue">ACTIVE</span><h3>SEPA Credit Transfer</h3><p>Rail: SEPA<br>Scheme: SCT<br>Message: pacs.008<br>Profile: SEPA_SCT_PACS008</p></article></div>
-</section>
+<section id="profiles" class="page config-page"><div class="eyebrow">CONFIGURATION</div><h2>Network & Message Profiles</h2><p class="lead">Profiles are editable through Routing Rules in this prototype so the route and generated-message profile remain aligned.</p><div class="callout"><b>Runtime configuration</b><p>Use Routing Rules to edit Rail, Scheme, Network and Message Profile. The next simulator execution uses the saved values.</p></div></section>
 
-<section id="compliance-config" class="page config-page">
-  <div class="eyebrow">CONFIGURATION</div><h2>AML & Anti-Fraud Integrations</h2>
-  <p class="lead">Mandatory pre-posting controls orchestrated through the Validation Engine. The Hub sends the payment context to external AML and Anti-Fraud APIs before a posting request is allowed.</p>
-  <div class="grid2">
-    <article class="panel"><span class="badge green">ACTIVE</span><h3>AML Screening API</h3>
-      <div class="facts">
-        <div class="fact"><small>Execution</small><b>Synchronous · Pre-posting</b></div>
-        <div class="fact"><small>Timeout</small><b>3,000 ms</b></div>
-        <div class="fact"><small>Allow Decision</small><b>CLEAR</b></div>
-        <div class="fact"><small>Review Decision</small><b>HOLD / MANUAL REVIEW</b></div>
-      </div>
-    </article>
-    <article class="panel"><span class="badge green">ACTIVE</span><h3>Anti-Fraud API</h3>
-      <div class="facts">
-        <div class="fact"><small>Execution</small><b>Synchronous · Pre-posting</b></div>
-        <div class="fact"><small>Timeout</small><b>2,000 ms</b></div>
-        <div class="fact"><small>Allow Decision</small><b>APPROVE</b></div>
-        <div class="fact"><small>Reject Decision</small><b>DECLINE</b></div>
-      </div>
-    </article>
-  </div>
-  <div class="callout"><b>Posting Gate</b><p>No Core posting request is allowed until all mandatory controls return an acceptable result. HOLD, DECLINE, timeout and technical-error handling will be controlled by configuration.</p></div>
-  <article class="panel"><h3>Pre-posting sequence</h3><div class="compliance-flow"><b>Canonical Payment</b><i>→</i><b>Business Validation</b><i>→</i><b>AML API</b><i>→</i><b>Anti-Fraud API</b><i>→</i><b>Posting Gate</b><i>→</i><b>Core Posting Eligible</b></div></article>
-</section>
+<section id="compliance-config" class="page config-page"><div class="eyebrow">CONFIGURATION</div><h2>AML & Anti-Fraud Integrations</h2><p class="lead">Editable mandatory pre-posting controls used by the Validation Engine.</p>
+<article class="panel config-editor"><div class="edit-grid"><label>AML Enabled<select id="cfgAmlEnabled"><option value="true">Yes</option><option value="false">No</option></select></label><label>AML Timeout (ms)<input id="cfgAmlTimeout" type="number" value="3000"></label><label>AML Allow Decision<input id="cfgAmlAllow" value="CLEAR"></label><label>AML Reject Decision<input id="cfgAmlReject" value="REJECT"></label>
+<label>Anti-Fraud Enabled<select id="cfgFraudEnabled"><option value="true">Yes</option><option value="false">No</option></select></label><label>Anti-Fraud Timeout (ms)<input id="cfgFraudTimeout" type="number" value="2000"></label><label>Fraud Allow Decision<input id="cfgFraudAllow" value="APPROVE"></label><label>Fraud Reject Decision<input id="cfgFraudReject" value="DECLINE"></label></div>
+<div class="config-actions"><button class="primary config-save">Save Configuration</button><button class="secondary config-reset">Reset Defaults</button><span class="configSaved"></span></div></article>
+<div class="callout"><b>Posting Gate</b><p>If an enabled mandatory control returns its configured reject decision, posting is blocked. Disabled controls are skipped in the demo.</p></div></section>
 
 <section id="architecture" class="page">
   <div class="eyebrow">PRODUCT BLUEPRINT</div><h2>End-to-end architecture</h2><div class="callout"><b>Mandatory control gate</b><p>Payment API → Canonical Payment → Validation Engine → AML API → Anti-Fraud API → Posting Gate → Core Posting / Routing → ISO Engine → Network Adapter.</p></div>

@@ -15,3 +15,5 @@
 .scenario-box small{display:block;margin-top:8px;color:#64748b}
 .step.error{border-color:#ef4444!important;background:#fff1f2!important}
 .step.error span{background:#ef4444!important;color:white!important}
+
+.edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:14px 0 22px}.edit-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700}.edit-grid input,.edit-grid select{padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}.config-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.configSaved{font-size:12px;color:#64748b}
