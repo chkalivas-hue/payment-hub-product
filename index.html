@@ -54,7 +54,18 @@
         <label>Priority<select id="priority"><option>NORMAL</option><option>HIGH</option></select></label>
         <label class="wide">Remittance Information<input id="remittance" value="Invoice 1234"></label>
       </div>
-      <button id="sendBtn" class="primary">Send Payment to Hub</button>
+      <div class="scenario-box">
+  <label><span>Simulation Scenario</span>
+    <select id="scenario">
+      <option value="success">Successful Payment</option>
+      <option value="aml_reject">AML Rejection</option>
+      <option value="fraud_reject">Anti-Fraud Rejection</option>
+      <option value="correspondent_reject">Correspondent / Network Rejection</option>
+    </select>
+  </label>
+  <small>Choose the outcome you want to demonstrate. Rejections will stop or reverse the lifecycle at the appropriate stage.</small>
+</div>
+<button id="sendBtn" class="primary">Send Payment to Hub</button>
       <button id="resetBtn" class="secondary">Reset Demo</button>
     </article>
 
@@ -73,7 +84,7 @@
       <i>→</i><div class="step" data-step="compliance"><span>4</span><b>AML / Fraud Cleared</b><small>Validation Engine · APIs</small></div>
       <i>→</i><div class="step" data-step="routed"><span>5</span><b>Route Selected</b><small>Routing Engine</small></div>
       <i>→</i><div class="step" data-step="generated"><span>6</span><b>Message Generated</b><small>ISO Engine</small></div>
-      <i>→</i><div class="step" data-step="sent"><span>7</span><b>Sent to Network</b><small>Network Adapter</small></div>
+      <i>→</i><div class="step" data-step="sent"><span>7</span><b>Sent to Network</b><small>Network Adapter</small></div><i>→</i><div class="step" data-step="response"><span>8</span><b>Network Response</b><small>Accepted / Rejected</small></div>
     </div>
     <div id="decisionBox" class="decision hidden"></div>
   </article>

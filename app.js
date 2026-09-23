@@ -36,6 +36,26 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 function setStep(name,state){const e=document.querySelector(`[data-step="${name}"]`);e.classList.remove('active','done');if(state)e.classList.add(state)}
 function resetSteps(){document.querySelectorAll('.step').forEach(e=>e.classList.remove('active','done'));$('decisionBox').classList.add('hidden');$('pipelineStatus').className='badge gray';$('pipelineStatus').textContent='READY'}
 
+
+function throwScenarioRejection(p,source){
+  if(typeof stats!=='undefined'){
+    if('outProcessing' in stats) stats.outProcessing=Math.max(0,stats.outProcessing-1);
+    if('outExceptions' in stats) stats.outExceptions++;
+    if('outRejected' in stats) stats.outRejected++;
+  }
+  if(typeof counters!=='undefined'){
+    if('outProcessing' in counters) counters.outProcessing=Math.max(0,counters.outProcessing-1);
+    if('outExceptions' in counters) counters.outExceptions++;
+    if('outRejected' in counters) counters.outRejected++;
+  }
+  payments.unshift(p);
+  renderPayments();
+  if(typeof renderCounters==='function') renderCounters();
+  showPayment(p);
+  const result=$('result');
+  if(result) result.innerHTML=`<b>Payment REJECTED</b><br>Source: ${source}<br>${p.rejectionReason}<br><br><b>No Core posting and no network message were sent.</b>`;
+}
+
 function routePayment(p){
  const rule=configs.rules[p.currency]||configs.rules.USD;
  const corr=configs.correspondents[p.currency];
@@ -98,10 +118,29 @@ async function simulate(){
      setStep(s,'active'); await wait(350); setStep(s,'done');
    }
 
-   // Demo: external AML and Anti-Fraud API calls executed before posting eligibility.
+   // Scenario-driven AML / Anti-Fraud pre-posting controls.
+   const scenario = $('scenario') ? $('scenario').value : 'success';
+   p.scenario=scenario;
    setStep('compliance','active'); await wait(500);
-   p.aml={status:'CLEAR',provider:'AML Screening API',decisionId:'AML-'+String(Date.now()).slice(-7),latency:'184 ms'};
-   p.fraud={status:'APPROVE',provider:'Anti-Fraud API',decisionId:'FRD-'+String(Date.now()).slice(-7),latency:'126 ms'};
+   p.aml={status: scenario==='aml_reject' ? 'REJECT' : 'CLEAR',provider:'AML Screening API',decisionId:'AML-'+String(Date.now()).slice(-7),latency:'184 ms'};
+   p.fraud={status:'NOT_EXECUTED',provider:'Anti-Fraud API',decisionId:'-',latency:'-'};
+
+   if(scenario==='aml_reject'){
+     p.postingGate='BLOCKED'; p.status='REJECTED'; p.rejectionSource='AML'; p.rejectionReason='AML screening rejected the payment';
+     setStep('compliance','error');
+     throwScenarioRejection(p,'AML');
+     return;
+   }
+
+   await wait(250);
+   p.fraud={status: scenario==='fraud_reject' ? 'DECLINE' : 'APPROVE',provider:'Anti-Fraud API',decisionId:'FRD-'+String(Date.now()).slice(-7),latency:'126 ms'};
+   if(scenario==='fraud_reject'){
+     p.postingGate='BLOCKED'; p.status='REJECTED'; p.rejectionSource='ANTI_FRAUD'; p.rejectionReason='Anti-Fraud engine declined the payment';
+     setStep('compliance','error');
+     throwScenarioRejection(p,'ANTI_FRAUD');
+     return;
+   }
+
    p.postingGate='CLEARED';
    setStep('compliance','done');
 
@@ -112,6 +151,18 @@ async function simulate(){
 
    setStep('generated','active'); await wait(400); currentXml=makeXml(p); setStep('generated','done');
    setStep('sent','active'); await wait(450); setStep('sent','done');
+   setStep('response','active'); await wait(500);
+   if(p.scenario==='correspondent_reject'){
+     p.networkStatus='REJECTED'; p.status='REJECTED'; p.rejectionSource='CORRESPONDENT / NETWORK';
+     p.rejectionReason='pacs.002 RJCT — payment rejected by correspondent/network';
+     p.coreStatus='REVERSAL_REQUIRED';
+     p.responseMessage={type:'pacs.002',status:'RJCT',reason:'AC04 / Demo rejection'};
+     setStep('response','error');
+     if(typeof stats!=='undefined'){ if('outProcessing' in stats) stats.outProcessing=Math.max(0,stats.outProcessing-1); if('outRejected' in stats) stats.outRejected++; if('outExceptions' in stats) stats.outExceptions++; }
+     if(typeof counters!=='undefined'){ if('outProcessing' in counters) counters.outProcessing=Math.max(0,counters.outProcessing-1); if('outRejected' in counters) counters.outRejected++; if('outExceptions' in counters) counters.outExceptions++; }
+   } else {
+     p.networkStatus='ACCEPTED'; setStep('response','done');
+   }
 
    p.status='SENT'; p.sentAt=new Date(); currentPayment=p;
    demoCounters.outgoing.processing--;
@@ -141,9 +192,9 @@ function populateBO(p){
  $('detailStatus').className='badge green large';$('detailStatus').textContent='SENT';
  $('paymentFacts').innerHTML=facts([['Source System',p.sourceSystem],['Source Payment ID',p.sourcePaymentId],['Amount',`${p.amount.toFixed(2)} ${p.currency}`],['Charge Bearer',p.chargeBearer],['Priority',p.priority],['Rail',p.route.rail]]);
  $('partyFacts').innerHTML=facts([['Debtor',p.debtor.name],['Debtor Account',p.debtor.account],['Creditor',p.creditor.name],['Creditor Account',p.creditor.account],['Creditor Agent',p.creditor.agentBic],['Remittance',p.remittanceInformation]]);
- $('complianceFacts').innerHTML=facts([['AML Decision',p.aml.status],['AML Provider',p.aml.provider],['AML Decision ID',p.aml.decisionId],['AML Latency',p.aml.latency],['Anti-Fraud Decision',p.fraud.status],['Anti-Fraud Provider',p.fraud.provider],['Fraud Decision ID',p.fraud.decisionId],['Fraud Latency',p.fraud.latency],['Posting Gate',p.postingGate]]);
+ $('complianceFacts').innerHTML=facts([['AML Decision',p.aml.status],['AML Provider',p.aml.provider],['AML Decision ID',p.aml.decisionId],['AML Latency',p.aml.latency],['Anti-Fraud Decision',p.fraud.status],['Anti-Fraud Provider',p.fraud.provider],['Fraud Decision ID',p.fraud.decisionId],['Fraud Latency',p.fraud.latency],['Posting Gate',p.postingGate],['Rejection Source',p.rejectionSource||'-'],['Rejection Reason',p.rejectionReason||'-']]);
  $('routingFacts').innerHTML=facts([['Rail',p.route.rail],['Scheme',p.route.scheme],['Correspondent',p.route.correspondent?`${p.route.correspondentBank} (${p.route.correspondent})`:'Direct'],['Nostro',p.route.nostro||'N/A'],['Message Profile',p.route.profile],['Estimated Route Cost',p.route.routeCost]]);
- const events=['Payment Received','Canonical Payment Created','Validation Successful','AML Screening: CLEAR','Anti-Fraud: APPROVE','Posting Gate: CLEARED',`Route Selected: ${p.route.rail} / ${p.route.scheme}`,'Payment Message Generated',`Sent to ${p.route.network}`];
+ const events=['Payment Received','Canonical Payment Created','Validation Successful',`AML Screening: ${p.aml?.status||'-'}`,`Anti-Fraud: ${p.fraud?.status||'-'}`,`Posting Gate: ${p.postingGate||'-'}`,`Route Selected: ${p.route.rail} / ${p.route.scheme}`,'Payment Message Generated',`Sent to ${p.route.network}`];
  $('lifecycle').innerHTML=events.map(x=>`<span>✓ ${x}</span>`).join('');
  $('coreInteractions').innerHTML=['✓ CreatePayment request received','✓ Debtor/account data accepted','✓ AML screening: CLEAR','✓ Anti-Fraud: APPROVE','✓ Posting Gate: CLEARED','✓ Core posting eligible','✓ Payment reference correlated: '+p.sourcePaymentId].map(x=>`<span>${x}</span>`).join('');
  $('auditTrail').innerHTML=events.map((x,i)=>`<span>${new Date(p.createdAt.getTime()+i*500).toLocaleTimeString()} · ${x}</span>`).join('');

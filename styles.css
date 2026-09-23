@@ -8,3 +8,10 @@
 .compliance-flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
 .compliance-flow b{background:#f0f6ff;border:1px solid #cfe0fb;padding:12px 14px;border-radius:9px;font-size:12px}
 .compliance-flow i{font-style:normal;color:var(--blue);font-size:18px}
+
+.scenario-box{margin:18px 0;padding:16px;border:1px solid #cfe0fb;background:#f6f9ff;border-radius:12px}
+.scenario-box label{display:flex;flex-direction:column;gap:7px}
+.scenario-box select{padding:11px;border:1px solid #cbd5e1;border-radius:8px;background:white}
+.scenario-box small{display:block;margin-top:8px;color:#64748b}
+.step.error{border-color:#ef4444!important;background:#fff1f2!important}
+.step.error span{background:#ef4444!important;color:white!important}
