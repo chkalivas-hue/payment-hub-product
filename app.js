@@ -15,33 +15,27 @@ function renderCounters(){
 
 
 const defaultConfigs={
- correspondents:{USD:{id:'CORR-USD-01',bank:'JPMorgan Chase',bic:'CHASUS33',nostro:'USD_NOSTRO_01'},GBP:{id:'CORR-GBP-01',bank:'Demo UK Correspondent',bic:'BARCGB22',nostro:'GBP_NOSTRO_01'}},
- nostros:{USD:{id:'USD_NOSTRO_01',account:'••••••4521'},GBP:{id:'GBP_NOSTRO_01',account:'••••••8834'}},
- rules:{USD:{rail:'SWIFT',scheme:'CBPR+',profile:'CBPR_PLUS_PACS008',network:'SWIFT'},EUR:{rail:'SEPA',scheme:'SCT',profile:'SEPA_SCT_PACS008',network:'SEPA'},GBP:{rail:'SWIFT',scheme:'CBPR+',profile:'CBPR_PLUS_PACS008',network:'SWIFT'}},
- costs:{USD:'10.50 USD',EUR:'0.08 EUR',GBP:'7.50 GBP'},
+ correspondents:[{currency:'USD',bank:'JPMorgan Chase',bic:'CHASUS33',priority:1,cost:8,status:'ACTIVE'},{currency:'GBP',bank:'Demo UK Correspondent',bic:'BARCGB22',priority:1,cost:7,status:'ACTIVE'}],
+ nostros:[{id:'USD_NOSTRO_01',currency:'USD',bic:'CHASUS33',account:'••••••4521',status:'ACTIVE'},{id:'GBP_NOSTRO_01',currency:'GBP',bic:'BARCGB22',account:'••••••8834',status:'ACTIVE'}],
+ rules:[{priority:10,currency:'USD',min:0,max:999999999,rail:'SWIFT',scheme:'CBPR+',network:'SWIFT',profile:'CBPR_PLUS_PACS008',status:'ACTIVE'},{priority:20,currency:'EUR',min:0,max:999999999,rail:'SEPA',scheme:'SCT',network:'SEPA',profile:'SEPA_SCT_PACS008',status:'ACTIVE'},{priority:30,currency:'GBP',min:0,max:999999999,rail:'SWIFT',scheme:'CBPR+',network:'SWIFT',profile:'CBPR_PLUS_PACS008',status:'ACTIVE'}],
+ fees:[{currency:'EUR',rail:'SEPA',scheme:'SCT',min:0,max:1000000,networkCost:.08,corrCost:0,status:'ACTIVE'},{currency:'EUR',rail:'SEPA',scheme:'SCT INST',min:0,max:100000,networkCost:.20,corrCost:0,status:'ACTIVE'},{currency:'USD',rail:'SWIFT',scheme:'CBPR+',min:0,max:1000000,networkCost:2.5,corrCost:8,status:'ACTIVE'}],
+ profiles:[{id:'CBPR_PLUS_PACS008',rail:'SWIFT',scheme:'CBPR+',message:'pacs.008',version:'pacs.008.001.13',status:'ACTIVE'},{id:'SEPA_SCT_PACS008',rail:'SEPA',scheme:'SCT',message:'pacs.008',version:'pacs.008.001.08',status:'ACTIVE'}],
  compliance:{aml:{enabled:true,timeout:3000,allow:'CLEAR',reject:'REJECT'},fraud:{enabled:true,timeout:2000,allow:'APPROVE',reject:'DECLINE'}}
 };
-let configs=JSON.parse(localStorage.getItem('paymentHubConfig')||'null')||structuredClone(defaultConfigs);
-function syncConfigForm(){
- const v=(id,val)=>{if($(id))$(id).value=val};
- v('cfgUsdBank',configs.correspondents.USD.bank);v('cfgUsdBic',configs.correspondents.USD.bic);v('cfgUsdNostro',configs.correspondents.USD.nostro);
- v('cfgGbpBank',configs.correspondents.GBP.bank);v('cfgGbpBic',configs.correspondents.GBP.bic);v('cfgGbpNostro',configs.correspondents.GBP.nostro);
- v('cfgUsdNostro2',configs.nostros.USD.id);v('cfgUsdAccount',configs.nostros.USD.account);v('cfgGbpNostro2',configs.nostros.GBP.id);v('cfgGbpAccount',configs.nostros.GBP.account);
- for(const c of ['USD','EUR','GBP']){v('cfg'+c[0]+c.slice(1).toLowerCase()+'Rail',configs.rules[c].rail);v('cfg'+c[0]+c.slice(1).toLowerCase()+'Scheme',configs.rules[c].scheme);v('cfg'+c[0]+c.slice(1).toLowerCase()+'Network',configs.rules[c].network);v('cfg'+c[0]+c.slice(1).toLowerCase()+'Profile',configs.rules[c].profile);v('cfg'+c[0]+c.slice(1).toLowerCase()+'Cost',configs.costs[c]);}
- v('cfgAmlEnabled',String(configs.compliance.aml.enabled));v('cfgAmlTimeout',configs.compliance.aml.timeout);v('cfgAmlAllow',configs.compliance.aml.allow);v('cfgAmlReject',configs.compliance.aml.reject);
- v('cfgFraudEnabled',String(configs.compliance.fraud.enabled));v('cfgFraudTimeout',configs.compliance.fraud.timeout);v('cfgFraudAllow',configs.compliance.fraud.allow);v('cfgFraudReject',configs.compliance.fraud.reject);
+const clone=o=>JSON.parse(JSON.stringify(o));let configs=clone(defaultConfigs),draft=clone(defaultConfigs);
+try{let x=JSON.parse(localStorage.getItem('hubCfg07')||'null');if(x){configs=x;draft=clone(x)}}catch(e){}
+const tbl=(h,r)=>`<div class="table-wrap"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${r.join('')}</tbody></table></div>`;
+const bd=s=>`<span class="badge ${s==='ACTIVE'?'green':'gray'}">${s}</span>`;
+function renderCfg(){
+ $('corrList').innerHTML=tbl(['Currency','Bank','BIC','Priority','Est. Cost','Status'],draft.correspondents.map((x,i)=>`<tr data-k="corr" data-i="${i}"><td><b>${x.currency}</b></td><td>${x.bank}</td><td>${x.bic}</td><td>${x.priority}</td><td>${x.cost}</td><td>${bd(x.status)}</td></tr>`));
+ $('nostroList').innerHTML=tbl(['Nostro','Currency','Correspondent','Account','Status'],draft.nostros.map((x,i)=>`<tr data-k="nostro" data-i="${i}"><td><b>${x.id}</b></td><td>${x.currency}</td><td>${x.bic}</td><td>${x.account}</td><td>${bd(x.status)}</td></tr>`));
+ $('ruleList').innerHTML=tbl(['Priority','Condition','Route','Profile','Status'],draft.rules.map((x,i)=>`<tr data-k="rule" data-i="${i}"><td>${x.priority}</td><td>${x.currency} · ${x.min}–${x.max}</td><td><b>${x.rail}/${x.scheme}</b> · ${x.network}</td><td>${x.profile}</td><td>${bd(x.status)}</td></tr>`));
+ $('feeList').innerHTML=tbl(['Currency','Rail / Scheme','Amount Band','Network','Correspondent','Status'],draft.fees.map((x,i)=>`<tr data-k="fee" data-i="${i}"><td>${x.currency}</td><td><b>${x.rail}/${x.scheme}</b></td><td>${x.min}–${x.max}</td><td>${x.networkCost}</td><td>${x.corrCost}</td><td>${bd(x.status)}</td></tr>`));
+ $('profileList').innerHTML=tbl(['Profile','Rail / Scheme','Message','Version','Status'],draft.profiles.map((x,i)=>`<tr data-k="profile" data-i="${i}"><td><b>${x.id}</b></td><td>${x.rail}/${x.scheme}</td><td>${x.message}</td><td>${x.version}</td><td>${bd(x.status)}</td></tr>`));
+ $('complianceList').innerHTML=tbl(['Control','Enabled','Timeout','Allow','Reject'],[['AML',draft.compliance.aml],['Anti-Fraud',draft.compliance.fraud]].map(([n,x])=>`<tr><td><b>${n}</b></td><td>${x.enabled?'Yes':'No'}</td><td>${x.timeout} ms</td><td>${x.allow}</td><td>${x.reject}</td></tr>`));
 }
-function saveConfig(){
- const val=(id,fallback)=>$(id)?$(id).value:fallback;
- configs.correspondents.USD={...configs.correspondents.USD,bank:val('cfgUsdBank',configs.correspondents.USD.bank),bic:val('cfgUsdBic',configs.correspondents.USD.bic),nostro:val('cfgUsdNostro2',val('cfgUsdNostro',configs.correspondents.USD.nostro))};
- configs.correspondents.GBP={...configs.correspondents.GBP,bank:val('cfgGbpBank',configs.correspondents.GBP.bank),bic:val('cfgGbpBic',configs.correspondents.GBP.bic),nostro:val('cfgGbpNostro2',val('cfgGbpNostro',configs.correspondents.GBP.nostro))};
- configs.nostros.USD={id:val('cfgUsdNostro2',configs.nostros.USD.id),account:val('cfgUsdAccount',configs.nostros.USD.account)};configs.nostros.GBP={id:val('cfgGbpNostro2',configs.nostros.GBP.id),account:val('cfgGbpAccount',configs.nostros.GBP.account)};
- const ids={USD:'Usd',EUR:'Eur',GBP:'Gbp'};for(const c of Object.keys(ids)){const x=ids[c];configs.rules[c]={rail:val('cfg'+x+'Rail',configs.rules[c].rail),scheme:val('cfg'+x+'Scheme',configs.rules[c].scheme),network:val('cfg'+x+'Network',configs.rules[c].network),profile:val('cfg'+x+'Profile',configs.rules[c].profile)};configs.costs[c]=val('cfg'+x+'Cost',configs.costs[c]);}
- configs.compliance.aml={enabled:val('cfgAmlEnabled','true')==='true',timeout:Number(val('cfgAmlTimeout',3000)),allow:val('cfgAmlAllow','CLEAR'),reject:val('cfgAmlReject','REJECT')};
- configs.compliance.fraud={enabled:val('cfgFraudEnabled','true')==='true',timeout:Number(val('cfgFraudTimeout',2000)),allow:val('cfgFraudAllow','APPROVE'),reject:val('cfgFraudReject','DECLINE')};
- localStorage.setItem('paymentHubConfig',JSON.stringify(configs));syncConfigForm();document.querySelectorAll('.configSaved').forEach(x=>x.textContent='Saved — next simulation will use this configuration.');
-}
-function resetConfig(){configs=structuredClone(defaultConfigs);localStorage.setItem('paymentHubConfig',JSON.stringify(configs));syncConfigForm();document.querySelectorAll('.configSaved').forEach(x=>x.textContent='Defaults restored.');}
+function saveCfg(){draft.compliance.aml={enabled:$('eAmlEnabled').value==='true',timeout:+$('eAmlTimeout').value,allow:$('eAmlAllow').value,reject:$('eAmlReject').value};draft.compliance.fraud={enabled:$('eFraudEnabled').value==='true',timeout:+$('eFraudTimeout').value,allow:$('eFraudAllow').value,reject:$('eFraudReject').value};configs=clone(draft);localStorage.setItem('hubCfg07',JSON.stringify(configs));$('configModal').classList.add('hidden');document.querySelectorAll('.editor').forEach(x=>x.classList.add('hidden'));openPage('simulator')}
+
 
 function openPage(id){pages.forEach(p=>p.classList.toggle('active',p.id===id));nav.forEach(n=>n.classList.toggle('active',n.dataset.page===id));history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});}
 nav.forEach(n=>n.onclick=()=>openPage(n.dataset.page));
@@ -81,9 +75,12 @@ function throwScenarioRejection(p,source){
 }
 
 function routePayment(p){
- const rule=configs.rules[p.currency]||configs.rules.USD;
- const corr=configs.correspondents[p.currency];
- return {...rule,correspondent:corr?.bic||null,correspondentBank:corr?.bank||null,nostro:corr?.nostro||null,routeCost:configs.costs[p.currency]||'N/A'};
+ const rule=configs.rules.filter(x=>x.status==='ACTIVE'&&x.currency===p.currency&&p.amount>=x.min&&p.amount<=x.max).sort((a,b)=>a.priority-b.priority)[0]||configs.rules.find(x=>x.status==='ACTIVE');
+ const corr=configs.correspondents.filter(x=>x.status==='ACTIVE'&&x.currency===p.currency).sort((a,b)=>(a.priority-b.priority)||(a.cost-b.cost))[0];
+ const nostro=corr?configs.nostros.find(x=>x.status==='ACTIVE'&&x.currency===p.currency&&x.bic===corr.bic):null;
+ const fee=configs.fees.find(x=>x.status==='ACTIVE'&&x.currency===p.currency&&x.rail===rule.rail&&x.scheme===rule.scheme&&p.amount>=x.min&&p.amount<=x.max);
+ const cost=fee?(+fee.networkCost + +fee.corrCost):+(corr?.cost||0);
+ return {...rule,correspondent:corr?.bic||null,correspondentBank:corr?.bank||null,nostro:nostro?.id||null,routeCost:`${cost.toFixed(2)} ${p.currency}`};
 }
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]))}
 function makeXml(p){
@@ -235,5 +232,14 @@ $('closeModal').onclick=()=> $('xmlModal').classList.add('hidden');
 $('xmlModal').onclick=e=>{if(e.target.id==='xmlModal')$('xmlModal').classList.add('hidden')};
 
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));t.classList.add('active');$(t.dataset.tab).classList.add('active')});
-
-document.querySelectorAll('.config-save').forEach(b=>b.addEventListener('click',saveConfig));document.querySelectorAll('.config-reset').forEach(b=>b.addEventListener('click',resetConfig));syncConfigForm();
+function ed(page){return page.querySelector('.editor')}
+document.querySelectorAll('.cfg-edit').forEach(b=>b.onclick=()=>ed(b.closest('.page')).classList.toggle('hidden'));
+document.querySelectorAll('.cfg-add').forEach(b=>b.onclick=()=>{let e=ed(b.closest('.page'));delete e.dataset.i;e.classList.remove('hidden')});
+document.querySelectorAll('.cfg-inactive').forEach(b=>b.onclick=()=>{let id=b.closest('.page').id,map={'correspondents':'correspondents','nostros':'nostros','routing-rules':'rules','fees':'fees','profiles':'profiles'};if(map[id]){let a=draft[map[id]];let x=a.find(v=>v.status==='ACTIVE');if(x)x.status='INACTIVE'}else{draft.compliance.aml.enabled=false;draft.compliance.fraud.enabled=false}renderCfg()});
+document.querySelectorAll('.cfg-save').forEach(b=>b.onclick=()=>$('configModal').classList.remove('hidden'));$('cfgCancel').onclick=()=>$('configModal').classList.add('hidden');$('cfgConfirm').onclick=saveCfg;
+$('applyCorr').onclick=()=>{draft.correspondents.push({currency:$('eCorrCurrency').value.toUpperCase(),bank:$('eCorrBank').value,bic:$('eCorrBic').value.toUpperCase(),priority:+$('eCorrPriority').value,cost:+$('eCorrCost').value,status:$('eCorrStatus').value});renderCfg()};
+$('applyNostro').onclick=()=>{draft.nostros.push({id:$('eNostroId').value,currency:$('eNostroCurrency').value.toUpperCase(),bic:$('eNostroBic').value.toUpperCase(),account:$('eNostroAccount').value,status:$('eNostroStatus').value});renderCfg()};
+$('applyRule').onclick=()=>{draft.rules.push({priority:+$('eRulePriority').value,currency:$('eRuleCurrency').value.toUpperCase(),min:+$('eRuleMin').value,max:+$('eRuleMax').value,rail:$('eRuleRail').value.toUpperCase(),scheme:$('eRuleScheme').value.toUpperCase(),network:$('eRuleNetwork').value.toUpperCase(),profile:$('eRuleProfile').value,status:$('eRuleStatus').value});renderCfg()};
+$('applyFee').onclick=()=>{draft.fees.push({currency:$('eFeeCurrency').value.toUpperCase(),rail:$('eFeeRail').value.toUpperCase(),scheme:$('eFeeScheme').value.toUpperCase(),min:+$('eFeeMin').value,max:+$('eFeeMax').value,networkCost:+$('eFeeNetwork').value,corrCost:+$('eFeeCorr').value,status:$('eFeeStatus').value});renderCfg()};
+$('applyProfile').onclick=()=>{draft.profiles.push({id:$('eProfileId').value,rail:$('eProfileRail').value.toUpperCase(),scheme:$('eProfileScheme').value.toUpperCase(),message:$('eProfileMessage').value,version:$('eProfileVersion').value,status:$('eProfileStatus').value});renderCfg()};
+renderCfg();
