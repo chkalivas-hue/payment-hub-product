@@ -26,14 +26,30 @@ const clone=o=>JSON.parse(JSON.stringify(o));let configs=clone(defaultConfigs),d
 try{let x=JSON.parse(localStorage.getItem('hubCfg07')||'null');if(x){configs=x;draft=clone(x)}}catch(e){}
 const tbl=(h,r)=>`<div class="table-wrap"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${r.join('')}</tbody></table></div>`;
 const bd=s=>`<span class="badge ${s==='ACTIVE'?'green':'gray'}">${s}</span>`;
+
+function updateConfigOrigin(){
+ const isDefault=JSON.stringify(configs)===JSON.stringify(defaultConfigs);
+ document.querySelectorAll('.cfg-origin').forEach(x=>{x.textContent=isDefault?'DEFAULT':'SAVED CONFIGURATION';x.classList.toggle('saved',!isDefault)});
+}
 function renderCfg(){
+ updateConfigOrigin();
  $('corrList').innerHTML=tbl(['Currency','Bank','BIC','Priority','Est. Cost','Status'],draft.correspondents.map((x,i)=>`<tr data-k="corr" data-i="${i}"><td><b>${x.currency}</b></td><td>${x.bank}</td><td>${x.bic}</td><td>${x.priority}</td><td>${x.cost}</td><td>${bd(x.status)}</td></tr>`));
  $('nostroList').innerHTML=tbl(['Nostro','Currency','Correspondent','Account','Status'],draft.nostros.map((x,i)=>`<tr data-k="nostro" data-i="${i}"><td><b>${x.id}</b></td><td>${x.currency}</td><td>${x.bic}</td><td>${x.account}</td><td>${bd(x.status)}</td></tr>`));
  $('ruleList').innerHTML=tbl(['Priority','Condition','Route','Profile','Status'],draft.rules.map((x,i)=>`<tr data-k="rule" data-i="${i}"><td>${x.priority}</td><td>${x.currency} · ${x.min}–${x.max}</td><td><b>${x.rail}/${x.scheme}</b> · ${x.network}</td><td>${x.profile}</td><td>${bd(x.status)}</td></tr>`));
  $('feeList').innerHTML=tbl(['Currency','Rail / Scheme','Amount Band','Network','Correspondent','Status'],draft.fees.map((x,i)=>`<tr data-k="fee" data-i="${i}"><td>${x.currency}</td><td><b>${x.rail}/${x.scheme}</b></td><td>${x.min}–${x.max}</td><td>${x.networkCost}</td><td>${x.corrCost}</td><td>${bd(x.status)}</td></tr>`));
  $('profileList').innerHTML=tbl(['Profile','Rail / Scheme','Message','Version','Status'],draft.profiles.map((x,i)=>`<tr data-k="profile" data-i="${i}"><td><b>${x.id}</b></td><td>${x.rail}/${x.scheme}</td><td>${x.message}</td><td>${x.version}</td><td>${bd(x.status)}</td></tr>`));
  $('complianceList').innerHTML=tbl(['Control','Enabled','Timeout','Allow','Reject'],[['AML',draft.compliance.aml],['Anti-Fraud',draft.compliance.fraud]].map(([n,x])=>`<tr><td><b>${n}</b></td><td>${x.enabled?'Yes':'No'}</td><td>${x.timeout} ms</td><td>${x.allow}</td><td>${x.reject}</td></tr>`));
+ bindConfigRows();
 }
+
+function bindConfigRows(){
+ document.querySelectorAll('#corrList tbody tr').forEach((r,i)=>r.onclick=()=>{let x=draft.correspondents[i],e=$('correspondents').querySelector('.editor');e.classList.remove('hidden');e.dataset.i=i;$('eCorrCurrency').value=x.currency;$('eCorrBank').value=x.bank;$('eCorrBic').value=x.bic;$('eCorrPriority').value=x.priority;$('eCorrCost').value=x.cost;$('eCorrStatus').value=x.status});
+ document.querySelectorAll('#nostroList tbody tr').forEach((r,i)=>r.onclick=()=>{let x=draft.nostros[i],e=$('nostros').querySelector('.editor');e.classList.remove('hidden');e.dataset.i=i;$('eNostroId').value=x.id;$('eNostroCurrency').value=x.currency;$('eNostroBic').value=x.bic;$('eNostroAccount').value=x.account;$('eNostroStatus').value=x.status});
+ document.querySelectorAll('#ruleList tbody tr').forEach((r,i)=>r.onclick=()=>{let x=draft.rules[i],e=$('routing-rules').querySelector('.editor');e.classList.remove('hidden');e.dataset.i=i;$('eRulePriority').value=x.priority;$('eRuleCurrency').value=x.currency;$('eRuleMin').value=x.min;$('eRuleMax').value=x.max;$('eRuleRail').value=x.rail;$('eRuleScheme').value=x.scheme;$('eRuleNetwork').value=x.network;$('eRuleProfile').value=x.profile;$('eRuleStatus').value=x.status});
+ document.querySelectorAll('#feeList tbody tr').forEach((r,i)=>r.onclick=()=>{let x=draft.fees[i],e=$('fees').querySelector('.editor');e.classList.remove('hidden');e.dataset.i=i;$('eFeeCurrency').value=x.currency;$('eFeeRail').value=x.rail;$('eFeeScheme').value=x.scheme;$('eFeeMin').value=x.min;$('eFeeMax').value=x.max;$('eFeeNetwork').value=x.networkCost;$('eFeeCorr').value=x.corrCost;$('eFeeStatus').value=x.status});
+ document.querySelectorAll('#profileList tbody tr').forEach((r,i)=>r.onclick=()=>{let x=draft.profiles[i],e=$('profiles').querySelector('.editor');e.classList.remove('hidden');e.dataset.i=i;$('eProfileId').value=x.id;$('eProfileRail').value=x.rail;$('eProfileScheme').value=x.scheme;$('eProfileMessage').value=x.message;$('eProfileVersion').value=x.version;$('eProfileStatus').value=x.status});
+}
+
 function saveCfg(){draft.compliance.aml={enabled:$('eAmlEnabled').value==='true',timeout:+$('eAmlTimeout').value,allow:$('eAmlAllow').value,reject:$('eAmlReject').value};draft.compliance.fraud={enabled:$('eFraudEnabled').value==='true',timeout:+$('eFraudTimeout').value,allow:$('eFraudAllow').value,reject:$('eFraudReject').value};configs=clone(draft);localStorage.setItem('hubCfg07',JSON.stringify(configs));$('configModal').classList.add('hidden');document.querySelectorAll('.editor').forEach(x=>x.classList.add('hidden'));openPage('simulator')}
 
 
@@ -236,9 +252,9 @@ function ed(page){return page.querySelector('.editor')}
 document.querySelectorAll('.cfg-edit').forEach(b=>b.onclick=()=>ed(b.closest('.page')).classList.toggle('hidden'));
 document.querySelectorAll('.cfg-add').forEach(b=>b.onclick=()=>{let e=ed(b.closest('.page'));delete e.dataset.i;e.classList.remove('hidden')});
 document.querySelectorAll('.cfg-inactive').forEach(b=>b.onclick=()=>{let id=b.closest('.page').id,map={'correspondents':'correspondents','nostros':'nostros','routing-rules':'rules','fees':'fees','profiles':'profiles'};if(map[id]){let a=draft[map[id]];let x=a.find(v=>v.status==='ACTIVE');if(x)x.status='INACTIVE'}else{draft.compliance.aml.enabled=false;draft.compliance.fraud.enabled=false}renderCfg()});
-document.querySelectorAll('.cfg-save').forEach(b=>b.onclick=()=>$('configModal').classList.remove('hidden'));$('cfgCancel').onclick=()=>$('configModal').classList.add('hidden');$('cfgConfirm').onclick=saveCfg;
-$('applyCorr').onclick=()=>{draft.correspondents.push({currency:$('eCorrCurrency').value.toUpperCase(),bank:$('eCorrBank').value,bic:$('eCorrBic').value.toUpperCase(),priority:+$('eCorrPriority').value,cost:+$('eCorrCost').value,status:$('eCorrStatus').value});renderCfg()};
-$('applyNostro').onclick=()=>{draft.nostros.push({id:$('eNostroId').value,currency:$('eNostroCurrency').value.toUpperCase(),bic:$('eNostroBic').value.toUpperCase(),account:$('eNostroAccount').value,status:$('eNostroStatus').value});renderCfg()};
+document.querySelectorAll('.cfg-save').forEach(b=>b.onclick=()=>$('configModal').classList.remove('hidden'));$('cfgCancel').addEventListener('click',e=>{e.preventDefault();$('configModal').classList.add('hidden')});$('cfgConfirm').addEventListener('click',e=>{e.preventDefault();saveCfg()});
+$('applyCorr').onclick=()=>{let e=$('correspondents').querySelector('.editor'),o={currency:$('eCorrCurrency').value.toUpperCase(),bank:$('eCorrBank').value,bic:$('eCorrBic').value.toUpperCase(),priority:+$('eCorrPriority').value,cost:+$('eCorrCost').value,status:$('eCorrStatus').value};if(e.dataset.i!==undefined){draft.correspondents[+e.dataset.i]=o;delete e.dataset.i}else draft.correspondents.push(o);renderCfg()};
+$('applyNostro').onclick=()=>{let e=$('nostros').querySelector('.editor'),o={id:$('eNostroId').value,currency:$('eNostroCurrency').value.toUpperCase(),bic:$('eNostroBic').value.toUpperCase(),account:$('eNostroAccount').value,status:$('eNostroStatus').value};if(e.dataset.i!==undefined){draft.nostros[+e.dataset.i]=o;delete e.dataset.i}else draft.nostros.push(o);renderCfg()};
 $('applyRule').onclick=()=>{draft.rules.push({priority:+$('eRulePriority').value,currency:$('eRuleCurrency').value.toUpperCase(),min:+$('eRuleMin').value,max:+$('eRuleMax').value,rail:$('eRuleRail').value.toUpperCase(),scheme:$('eRuleScheme').value.toUpperCase(),network:$('eRuleNetwork').value.toUpperCase(),profile:$('eRuleProfile').value,status:$('eRuleStatus').value});renderCfg()};
 $('applyFee').onclick=()=>{draft.fees.push({currency:$('eFeeCurrency').value.toUpperCase(),rail:$('eFeeRail').value.toUpperCase(),scheme:$('eFeeScheme').value.toUpperCase(),min:+$('eFeeMin').value,max:+$('eFeeMax').value,networkCost:+$('eFeeNetwork').value,corrCost:+$('eFeeCorr').value,status:$('eFeeStatus').value});renderCfg()};
 $('applyProfile').onclick=()=>{draft.profiles.push({id:$('eProfileId').value,rail:$('eProfileRail').value.toUpperCase(),scheme:$('eProfileScheme').value.toUpperCase(),message:$('eProfileMessage').value,version:$('eProfileVersion').value,status:$('eProfileStatus').value});renderCfg()};
