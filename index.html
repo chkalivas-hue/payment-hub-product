@@ -276,7 +276,25 @@
     </div>
   </div>
 
-  <div class="bp-note"><b>Key principle:</b> the Payment is the lifecycle object. ISO 20022 messages are generated or received around that payment; they are not the payment itself.</div>
+  
+<div class="bp-recon">
+  <div class="bp-recon-title">
+    <span class="bp-recon-kicker">POST-PROCESSING / CONTROL LAYER</span>
+    <h4>Reconciliation Engine</h4>
+    <p>Runs after or in parallel with payment execution. It does not block the payment flow.</p>
+  </div>
+  <div class="bp-recon-sources">
+    <div><b>Payment Hub</b><small>Lifecycle & references</small></div><span>↔</span>
+    <div><b>Core Banking</b><small>Debit / credit / reversal</small></div><span>↔</span>
+    <div><b>Network</b><small>Transmission & response</small></div><span>↔</span>
+    <div><b>Settlement</b><small>Nostro / settlement evidence</small></div>
+  </div>
+  <div class="bp-recon-outcomes">
+    <span class="recon-ok">✓ MATCHED</span>
+    <span class="recon-ex">! EXCEPTION → OPERATIONS</span>
+  </div>
+</div>
+<div class="bp-note"><b>Key principle:</b> the Payment is the lifecycle object. ISO 20022 messages are generated or received around that payment; they are not the payment itself.</div>
 </div>
 
   <div class="eyebrow">PRODUCT BLUEPRINT</div><h2>End-to-end architecture</h2><div class="callout"><b>Mandatory control gate</b><p>Payment API → Canonical Payment → Validation Engine → AML API → Anti-Fraud API → Posting Gate → Core Posting / Routing → ISO Engine → Network Adapter.</p></div>
