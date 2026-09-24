@@ -15,3 +15,11 @@
 .scenario-box small{display:block;margin-top:8px;color:#64748b}
 .step.error{border-color:#ef4444!important;background:#fff1f2!important}
 .step.error span{background:#ef4444!important;color:white!important}
+
+.blueprint-wrap{margin:22px 0 30px;padding:22px;border:1px solid #dbe4f0;border-radius:16px;background:#fbfdff}
+.blueprint-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin-bottom:18px}.blueprint-head h3{margin:4px 0}.blueprint-head p{max-width:520px;color:#64748b;margin:0}
+.bp-tabs{display:flex;gap:8px;margin:12px 0 20px}.bp-tab{border:1px solid #cbd5e1;background:#fff;padding:9px 14px;border-radius:9px;cursor:pointer;font-weight:700}.bp-tab.active{background:#0f172a;color:#fff;border-color:#0f172a}
+.bp-flow{display:none}.bp-flow.active{display:block}.bp-lane{display:grid;grid-template-columns:120px minmax(160px,1fr) 28px minmax(160px,1fr) 28px minmax(160px,1fr);gap:10px;align-items:stretch}.bp-lane-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b;align-self:center}
+.bp-node{border:1px solid #d8e1ec;background:#fff;border-radius:12px;padding:13px;min-height:94px}.bp-node b,.bp-node small,.bp-node em{display:block}.bp-node small{margin-top:5px;font-weight:700;color:#475569}.bp-node em{font-style:normal;font-size:11px;color:#64748b;margin-top:7px;line-height:1.4}.bp-node.external{border-style:dashed}.bp-node.control{box-shadow:inset 3px 0 0 #64748b}.bp-node.core{box-shadow:inset 3px 0 0 #334155}.bp-node.final{background:#f8fafc}
+.bp-arrow{align-self:center;text-align:center;font-size:20px;color:#94a3b8}.bp-down{text-align:center;color:#94a3b8;font-size:22px;line-height:30px;margin-left:120px}.bp-note{margin-top:18px;padding:12px 14px;background:#f1f5f9;border-radius:10px;color:#475569;font-size:13px}
+@media(max-width:1000px){.bp-lane{grid-template-columns:1fr}.bp-lane-title{margin-top:8px}.bp-arrow{transform:rotate(90deg)}.bp-down{margin-left:0}.blueprint-head{display:block}.blueprint-head p{margin-top:8px}}

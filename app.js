@@ -212,3 +212,10 @@ $('closeModal').onclick=()=> $('xmlModal').classList.add('hidden');
 $('xmlModal').onclick=e=>{if(e.target.id==='xmlModal')$('xmlModal').classList.add('hidden')};
 
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));t.classList.add('active');$(t.dataset.tab).classList.add('active')});
+document.querySelectorAll('.bp-tab').forEach(btn=>btn.addEventListener('click',()=>{
+ document.querySelectorAll('.bp-tab').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('.bp-flow').forEach(x=>x.classList.remove('active'));
+ btn.classList.add('active');
+ const target=document.getElementById(btn.dataset.bp);
+ if(target) target.classList.add('active');
+}));

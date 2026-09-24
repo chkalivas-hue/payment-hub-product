@@ -191,6 +191,94 @@
 </section>
 
 <section id="architecture" class="page">
+<div class="blueprint-wrap">
+  <div class="blueprint-head">
+    <div><div class="eyebrow">PAYMENT LIFECYCLE BLUEPRINT</div><h3>How a payment travels through the Hub</h3></div>
+    <p>End-to-end component view from initiation to final network outcome and posting state.</p>
+  </div>
+
+  <div class="bp-tabs">
+    <button class="bp-tab active" data-bp="bp-outgoing">Outgoing Payment</button>
+    <button class="bp-tab" data-bp="bp-incoming">Incoming Payment</button>
+  </div>
+
+  <div id="bp-outgoing" class="bp-flow active">
+    <div class="bp-lane"><span class="bp-lane-title">Initiation</span>
+      <div class="bp-node external"><b>Channel / Core</b><small>Web Banking · Mobile · Core · API</small><em>Calls Create Payment API</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>Payment API</b><small>Request validation</small><em>Authentication · mandatory fields · idempotency</em></div>
+    </div>
+    <div class="bp-down">↓</div>
+    <div class="bp-lane"><span class="bp-lane-title">Hub controls</span>
+      <div class="bp-node"><b>Canonical Payment</b><small>Create internal payment</small><em>PAY-ID · normalized parties, accounts, amount</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>Validation Engine</b><small>Business validation</small><em>Payment rules · data quality · duplicate checks</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node control"><b>AML / Anti-Fraud</b><small>Pre-posting approval</small><em>CLEAR / APPROVE required</em></div>
+    </div>
+    <div class="bp-down">↓</div>
+    <div class="bp-lane"><span class="bp-lane-title">Decision & bank</span>
+      <div class="bp-node"><b>Routing Engine</b><small>Select processing route</small><em>Rail · scheme · correspondent · settlement path</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node core"><b>Core Adapter</b><small>Ask bank to execute debit</small><em>Account status · available balance · limits · debit/posting</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node core"><b>Core Banking</b><small>Posting result</small><em>POSTED or REJECTED</em></div>
+    </div>
+    <div class="bp-down">↓</div>
+    <div class="bp-lane"><span class="bp-lane-title">Network</span>
+      <div class="bp-node"><b>ISO Message Engine</b><small>Generate network message</small><em>e.g. pacs.008 from payment + route</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>Network Adapter</b><small>Transmit</small><em>SWIFT · SEPA · SCT Inst · local rail</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node external"><b>Payment Network</b><small>Process payment</small><em>Accept / reject / pending</em></div>
+    </div>
+    <div class="bp-down">↓</div>
+    <div class="bp-lane"><span class="bp-lane-title">Response</span>
+      <div class="bp-node external"><b>Network Response</b><small>e.g. pacs.002</small><em>ACCEPTED / REJECTED</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>Lifecycle Engine</b><small>Correlate & update payment</small><em>Payment · Network · Core status</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node final"><b>Final Outcome</b><small>Persist complete state</small><em>Ready for operations & reconciliation</em></div>
+    </div>
+  </div>
+
+  <div id="bp-incoming" class="bp-flow">
+    <div class="bp-lane"><span class="bp-lane-title">Network</span>
+      <div class="bp-node external"><b>Payment Network</b><small>Incoming payment message</small><em>e.g. pacs.008</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>Network Adapter</b><small>Receive & authenticate</small><em>Transport / network controls</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>ISO Message Engine</b><small>Parse & validate message</small><em>Schema · message rules · extract payment data</em></div>
+    </div>
+    <div class="bp-down">↓</div>
+    <div class="bp-lane"><span class="bp-lane-title">Hub controls</span>
+      <div class="bp-node"><b>Canonical Payment</b><small>Create incoming payment</small><em>Normalize network data into Hub model</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>Validation Engine</b><small>Business validation</small><em>Beneficiary · account · duplicate · payment rules</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node control"><b>AML / Anti-Fraud</b><small>Pre-posting approval</small><em>Screen before credit posting</em></div>
+    </div>
+    <div class="bp-down">↓</div>
+    <div class="bp-lane"><span class="bp-lane-title">Bank posting</span>
+      <div class="bp-node core"><b>Core Adapter</b><small>Validate beneficiary & request credit</small><em>Account status · restrictions · posting eligibility</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node core"><b>Core Banking</b><small>Credit beneficiary</small><em>POSTED or REJECTED</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>Lifecycle Engine</b><small>Update internal state</small><em>Core + Payment status</em></div>
+    </div>
+    <div class="bp-down">↓</div>
+    <div class="bp-lane"><span class="bp-lane-title">Response</span>
+      <div class="bp-node"><b>ISO Message Engine</b><small>Generate response if required</small><em>Status / rejection response</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node"><b>Network Adapter</b><small>Send response</small><em>Return outcome to rail</em></div>
+      <span class="bp-arrow">→</span>
+      <div class="bp-node final"><b>Final Outcome</b><small>Persist complete state</small><em>Ready for operations & reconciliation</em></div>
+    </div>
+  </div>
+
+  <div class="bp-note"><b>Key principle:</b> the Payment is the lifecycle object. ISO 20022 messages are generated or received around that payment; they are not the payment itself.</div>
+</div>
+
   <div class="eyebrow">PRODUCT BLUEPRINT</div><h2>End-to-end architecture</h2><div class="callout"><b>Mandatory control gate</b><p>Payment API → Canonical Payment → Validation Engine → AML API → Anti-Fraud API → Posting Gate → Core Posting / Routing → ISO Engine → Network Adapter.</p></div>
   <div class="arch"><div><b>Core / Channels</b><small>CreatePayment()</small></div><i>→</i><div class="hubbox"><b>Payment API</b><small>Canonical Factory</small><small>Validation Engine</small><small>Orchestration Engine</small></div><i>→</i><div class="hubbox"><b>Routing Engine</b><small>Correspondents</small><small>Nostros</small><small>Fees / Rules</small></div><i>→</i><div class="hubbox"><b>ISO Engine</b><small>Generate / Parse / Validate</small></div><i>→</i><div><b>Network Adapter</b><small>SWIFT / SEPA / TIPS / RT1</small></div></div>
 </section>
