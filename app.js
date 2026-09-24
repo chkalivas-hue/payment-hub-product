@@ -252,10 +252,11 @@ function ed(page){return page.querySelector('.editor')}
 document.querySelectorAll('.cfg-edit').forEach(b=>b.onclick=()=>ed(b.closest('.page')).classList.toggle('hidden'));
 document.querySelectorAll('.cfg-add').forEach(b=>b.onclick=()=>{let e=ed(b.closest('.page'));delete e.dataset.i;e.classList.remove('hidden')});
 document.querySelectorAll('.cfg-inactive').forEach(b=>b.onclick=()=>{let id=b.closest('.page').id,map={'correspondents':'correspondents','nostros':'nostros','routing-rules':'rules','fees':'fees','profiles':'profiles'};if(map[id]){let a=draft[map[id]];let x=a.find(v=>v.status==='ACTIVE');if(x)x.status='INACTIVE'}else{draft.compliance.aml.enabled=false;draft.compliance.fraud.enabled=false}renderCfg()});
-document.querySelectorAll('.cfg-save').forEach(b=>b.onclick=()=>$('configModal').classList.remove('hidden'));$('cfgCancel').addEventListener('click',e=>{e.preventDefault();$('configModal').classList.add('hidden')});$('cfgConfirm').addEventListener('click',e=>{e.preventDefault();saveCfg()});
-$('applyCorr').onclick=()=>{let e=$('correspondents').querySelector('.editor'),o={currency:$('eCorrCurrency').value.toUpperCase(),bank:$('eCorrBank').value,bic:$('eCorrBic').value.toUpperCase(),priority:+$('eCorrPriority').value,cost:+$('eCorrCost').value,status:$('eCorrStatus').value};if(e.dataset.i!==undefined){draft.correspondents[+e.dataset.i]=o;delete e.dataset.i}else draft.correspondents.push(o);renderCfg()};
-$('applyNostro').onclick=()=>{let e=$('nostros').querySelector('.editor'),o={id:$('eNostroId').value,currency:$('eNostroCurrency').value.toUpperCase(),bic:$('eNostroBic').value.toUpperCase(),account:$('eNostroAccount').value,status:$('eNostroStatus').value};if(e.dataset.i!==undefined){draft.nostros[+e.dataset.i]=o;delete e.dataset.i}else draft.nostros.push(o);renderCfg()};
-$('applyRule').onclick=()=>{draft.rules.push({priority:+$('eRulePriority').value,currency:$('eRuleCurrency').value.toUpperCase(),min:+$('eRuleMin').value,max:+$('eRuleMax').value,rail:$('eRuleRail').value.toUpperCase(),scheme:$('eRuleScheme').value.toUpperCase(),network:$('eRuleNetwork').value.toUpperCase(),profile:$('eRuleProfile').value,status:$('eRuleStatus').value});renderCfg()};
-$('applyFee').onclick=()=>{draft.fees.push({currency:$('eFeeCurrency').value.toUpperCase(),rail:$('eFeeRail').value.toUpperCase(),scheme:$('eFeeScheme').value.toUpperCase(),min:+$('eFeeMin').value,max:+$('eFeeMax').value,networkCost:+$('eFeeNetwork').value,corrCost:+$('eFeeCorr').value,status:$('eFeeStatus').value});renderCfg()};
-$('applyProfile').onclick=()=>{draft.profiles.push({id:$('eProfileId').value,rail:$('eProfileRail').value.toUpperCase(),scheme:$('eProfileScheme').value.toUpperCase(),message:$('eProfileMessage').value,version:$('eProfileVersion').value,status:$('eProfileStatus').value});renderCfg()};
+document.querySelectorAll('.cfg-save').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openConfigModal();}));
+document.addEventListener('click',e=>{
+ if(e.target && e.target.id==='cfgConfirm'){e.preventDefault();e.stopPropagation();saveCfg();}
+ if(e.target && e.target.id==='cfgCancel'){e.preventDefault();e.stopPropagation();closeConfigModal();}
+});
 renderCfg();
+
+window.saveCfg=saveCfg;window.closeConfigModal=closeConfigModal;window.openConfigModal=openConfigModal;
