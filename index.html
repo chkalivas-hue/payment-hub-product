@@ -202,47 +202,16 @@
     <button class="bp-tab" data-bp="bp-incoming">Incoming Payment</button>
   </div>
 
-  <div id="bp-outgoing" class="bp-flow active">
-    <div class="bp-lane"><span class="bp-lane-title">Initiation</span>
-      <div class="bp-node external"><b>Channel / Core</b><small>Web Banking · Mobile · Core · API</small><em>Calls Create Payment API</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node"><b>Payment API</b><small>Request validation</small><em>Authentication · mandatory fields · idempotency</em></div>
-    </div>
-    <div class="bp-down">↓</div>
-    <div class="bp-lane"><span class="bp-lane-title">Hub controls</span>
-      <div class="bp-node"><b>Canonical Payment</b><small>Create internal payment</small><em>PAY-ID · normalized parties, accounts, amount</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node"><b>Validation Engine</b><small>Business validation</small><em>Payment rules · data quality · duplicate checks</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node control"><b>AML / Anti-Fraud</b><small>Pre-posting approval</small><em>CLEAR / APPROVE required</em></div>
-    </div>
-    <div class="bp-down">↓</div>
-    <div class="bp-lane"><span class="bp-lane-title">Decision & bank</span>
-      <div class="bp-node"><b>Routing Engine</b><small>Select processing route</small><em>Rail · scheme · correspondent · settlement path</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node core"><b>Core Adapter</b><small>Ask bank to execute debit</small><em>Account status · available balance · limits · debit/posting</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node core"><b>Core Banking</b><small>Posting result</small><em>POSTED or REJECTED</em></div>
-    </div>
-    <div class="bp-down">↓</div>
-    <div class="bp-lane"><span class="bp-lane-title">Network</span>
-      <div class="bp-node"><b>ISO Message Engine</b><small>Generate network message</small><em>e.g. pacs.008 from payment + route</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node"><b>Network Adapter</b><small>Transmit</small><em>SWIFT · SEPA · SCT Inst · local rail</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node external"><b>Payment Network</b><small>Process payment</small><em>Accept / reject / pending</em></div>
-    </div>
-    <div class="bp-down">↓</div>
-    <div class="bp-lane"><span class="bp-lane-title">Response</span>
-      <div class="bp-node external"><b>Network Response</b><small>e.g. pacs.002</small><em>ACCEPTED / REJECTED</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node"><b>Lifecycle Engine</b><small>Correlate & update payment</small><em>Payment · Network · Core status</em></div>
-      <span class="bp-arrow">→</span>
-      <div class="bp-node final"><b>Final Outcome</b><small>Persist complete state</small><em>Ready for operations & reconciliation</em></div>
-    </div>
-  </div>
-
-  <div id="bp-incoming" class="bp-flow">
+  <div id="bp-outgoing" class="bp-flow active"><div class="bp-pattern-intro"><span class="bp-pattern-label">ONE ORCHESTRATION FLOW · MULTIPLE INITIATION PATTERNS</span><h3>Outgoing Payment</h3><p>The business lifecycle remains the same regardless of the source. What changes is how the Hub interacts with Core Banking.</p></div>
+<div class="bp-initiators"><div class="bp-lane-title">1 · INITIATION</div><div class="bp-initiator-grid">
+<div class="bp-init-card"><b>Core Banking</b><small>Initiator + downstream posting system</small></div><div class="bp-init-card"><b>Mobile Banking</b><small>Direct initiation</small></div><div class="bp-init-card"><b>Web Banking</b><small>Direct initiation</small></div><div class="bp-init-card"><b>Branch / ERP / API</b><small>External / assisted initiation</small></div></div><div class="bp-flow-arrow">↓ Create / Prepare Payment ↓</div></div>
+<div class="bp-lane"><div class="bp-lane-title">2 · HUB — INTAKE & CONTROLS</div><div class="bp-flow"><div class="bp-node"><b>Payment API</b><small>Authentication · mandatory fields · idempotency</small></div><span>→</span><div class="bp-node"><b>Canonical Payment</b><small>Create PAY-ID · normalize payment data</small></div><span>→</span><div class="bp-node"><b>Validation Engine</b><small>Business rules · data quality · duplicates</small></div><span>→</span><div class="bp-node"><b>AML / Anti-Fraud</b><small>Approval required before posting</small></div></div></div>
+<div class="bp-lane bp-routing-lane"><div class="bp-lane-title">3 · ROUTING DECISION</div><div class="bp-flow"><div class="bp-node bp-focus"><b>Routing Engine</b><small>Select rail · scheme · correspondent · settlement path</small></div><span>→</span><div class="bp-node"><b>Route Result</b><small>Selected route + route/network cost context</small></div></div></div>
+<div class="bp-core-patterns"><div class="bp-lane-title">4 · CORE BANKING — PRICING & POSTING</div><div class="bp-pattern-columns"><div class="bp-pattern-card"><span class="bp-pattern-tag">INITIATOR = CORE</span><p><b>Hub returns to the initiating Core</b> with the route and route-cost context.</p><div class="bp-mini-flow">Core → Hub → Routing → <b>Core</b></div></div><div class="bp-pattern-card"><span class="bp-pattern-tag">INITIATOR ≠ CORE</span><p><b>Hub calls Core through the Core Adapter</b> as a downstream system.</p><div class="bp-mini-flow">Channel → Hub → Routing → <b>Core Adapter → Core</b></div></div></div><div class="bp-core-responsibility"><b>Core / Pricing:</b><span>Customer fee</span><span>Account status</span><span>Balance</span><span>Limits</span><span>Debit / posting</span></div><div class="bp-flow-arrow">↓ POSTED / REJECTED ↓</div></div>
+<div class="bp-lane"><div class="bp-lane-title">5 · MESSAGE & NETWORK</div><div class="bp-flow"><div class="bp-node"><b>ISO Message Engine</b><small>Generate message from payment + route</small></div><span>→</span><div class="bp-node"><b>Network Adapter</b><small>Transmit to selected rail</small></div><span>→</span><div class="bp-node"><b>Payment Network</b><small>Accept · reject · pending</small></div></div></div>
+<div class="bp-lane"><div class="bp-lane-title">6 · RESPONSE & LIFECYCLE</div><div class="bp-flow"><div class="bp-node"><b>Network Response</b><small>e.g. pacs.002</small></div><span>→</span><div class="bp-node"><b>Payment Orchestration</b><small>Correlate & update states</small></div><span>→</span><div class="bp-node"><b>Final Outcome</b><small>Persist complete lifecycle state</small></div></div></div>
+<div class="bp-principle-strip"><b>Key integration principle</b><span>The business lifecycle stays the same. Only the way the Hub reaches Core Banking changes according to the initiator.</span></div></div>
+<div id="bp-incoming" class="bp-flow">
     <div class="bp-lane"><span class="bp-lane-title">Network</span>
       <div class="bp-node external"><b>Payment Network</b><small>Incoming payment message</small><em>e.g. pacs.008</em></div>
       <span class="bp-arrow">→</span>
