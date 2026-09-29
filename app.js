@@ -1,6 +1,8 @@
 const nav=document.querySelectorAll('.nav'),pages=document.querySelectorAll('.page');
 const $=id=>document.getElementById(id);
 let currentPayment=null,currentXml='';
+const paymentStore=new Map();
+let selectedPaymentId=null;
 const demoCounters={outgoing:{total:0,processing:0,sent:0,exceptions:0},incoming:{total:0,processing:0,completed:0,exceptions:0}};
 function renderCounters(){
   $('outTotal').textContent=demoCounters.outgoing.total;
@@ -20,11 +22,14 @@ const configs={
 };
 
 function openPage(id){pages.forEach(p=>p.classList.toggle('active',p.id===id));nav.forEach(n=>n.classList.toggle('active',n.dataset.page===id));history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});}
-nav.forEach(n=>n.onclick=()=>openPage(n.dataset.page));
+nav.forEach(n=>n.onclick=()=>{
+ if(n.dataset.page==='payment-detail'){openPage('payments');if(selectedPaymentId)openPayment(selectedPaymentId);return;}
+ openPage(n.dataset.page)
+});
 const hash=location.hash.slice(1);if(hash&&$(hash))openPage(hash);
 
 function payload(){
- return {sourceSystem:$('sourceSystem').value,sourcePaymentId:$('sourcePaymentId').value,paymentType:'CREDIT_TRANSFER',direction:'OUTGOING',
+ return {sourceSystem:$('sourceSystem').value,sourcePaymentId:$('sourcePaymentId').value,paymentType:'CREDIT_TRANSFER',direction:$('paymentDirection')?.value||'OUTGOING',
  debtor:{customerId:$('customerId').value,name:$('debtorName').value,account:$('debtorAccount').value},
  creditor:{name:$('creditorName').value,account:$('creditorAccount').value,agentBic:$('creditorBic').value},
  amount:Number($('amount').value),currency:$('currency').value,chargeBearer:$('charges').value,priority:$('priority').value,remittanceInformation:$('remittance').value};
@@ -95,7 +100,7 @@ function makeXml(p){
 </Document>`;
 }
 
-async function simulate(){
+async function simulateOutgoing(){
  resetSteps();
  const btn=$('sendBtn');
  btn.disabled=true;
@@ -149,7 +154,11 @@ async function simulate(){
    $('decisionBox').innerHTML=`<b>Pre-Posting Gate: CLEARED</b> · AML: CLEAR · Anti-Fraud: APPROVE<br><br><b>Routing Decision</b><br>Rail: <b>${p.route.rail}</b> · Scheme: <b>${p.route.scheme}</b> · Correspondent: <b>${p.route.correspondent||'Direct'}</b> · Nostro: <b>${p.route.nostro||'N/A'}</b> · Profile: <b>${p.route.profile}</b> · Estimated route cost: <b>${p.route.routeCost}</b>`;
    $('decisionBox').classList.remove('hidden');
 
-   setStep('generated','active'); await wait(400); currentXml=makeXml(p); setStep('generated','done');
+   setStep('generated','active'); await wait(400); currentXml=makeXml(p); p.xml=currentXml;
+   p.messages=[{direction:'OUT',type:'pacs.008',id:p.messageId,network:p.route.network,status:'SENT'}];
+   p.events=['Payment Received','Canonical Payment Created','Validation Successful',`AML Screening: ${p.aml.status}`,`Anti-Fraud: ${p.fraud.status}`,`Posting Gate: ${p.postingGate}`,`Route Selected: ${p.route.rail} / ${p.route.scheme}`,'Core Debit / Posting Confirmed','Payment Message Generated',`Sent to ${p.route.network}`];
+   p.coreEvents=['✓ Posting request prepared','✓ Account / balance / limits validated','✓ Core debit / posting: POSTED'];
+   setStep('generated','done');
    setStep('sent','active'); await wait(450); setStep('sent','done');
    setStep('response','active'); await wait(500);
    if(p.scenario==='correspondent_reject'){
@@ -157,20 +166,26 @@ async function simulate(){
      p.rejectionReason='pacs.002 RJCT — payment rejected by correspondent/network';
      p.coreStatus='REVERSAL_REQUIRED';
      p.responseMessage={type:'pacs.002',status:'RJCT',reason:'AC04 / Demo rejection'};
+     p.messages.push({direction:'IN',type:'pacs.002',id:'STS-'+String(Date.now()).slice(-8),network:p.route.network,status:'REJECTED'});
+     p.events.push('Network Response: REJECTED','Core Reversal Required');
      setStep('response','error');
      if(typeof stats!=='undefined'){ if('outProcessing' in stats) stats.outProcessing=Math.max(0,stats.outProcessing-1); if('outRejected' in stats) stats.outRejected++; if('outExceptions' in stats) stats.outExceptions++; }
      if(typeof counters!=='undefined'){ if('outProcessing' in counters) counters.outProcessing=Math.max(0,counters.outProcessing-1); if('outRejected' in counters) counters.outRejected++; if('outExceptions' in counters) counters.outExceptions++; }
    } else {
-     p.networkStatus='ACCEPTED'; setStep('response','done');
+     p.networkStatus='ACCEPTED';
+     p.messages.push({direction:'IN',type:'pacs.002',id:'STS-'+String(Date.now()).slice(-8),network:p.route.network,status:'ACCEPTED'});
+     p.events.push('Network Response: ACCEPTED');
+     setStep('response','done');
    }
 
-   p.status='SENT'; p.sentAt=new Date(); currentPayment=p;
+   p.status=p.networkStatus==='REJECTED'?'REJECTED':'SENT'; p.sentAt=new Date(); currentPayment=p;
+   paymentStore.set(p.paymentId,p); selectedPaymentId=p.paymentId;
    demoCounters.outgoing.processing--;
-   demoCounters.outgoing.sent++;
+   if(p.status==='REJECTED') demoCounters.outgoing.exceptions++; else demoCounters.outgoing.sent++;
    renderCounters();
 
    $('pipelineStatus').className='badge green';
-   $('pipelineStatus').textContent='SENT';
+   $('pipelineStatus').textContent=p.status;
    populateBO(p);
    addPaymentRow(p);
  }catch(err){
@@ -187,25 +202,102 @@ async function simulate(){
  }
 }
 
+
+function statusBadge(status){
+ const cls=['SENT','COMPLETED','ACCEPTED'].includes(status)?'green':(['REJECTED','EXCEPTION'].includes(status)?'amber':'blue');
+ return `<span class="badge ${cls}">${esc(status||'PROCESSING')}</span>`;
+}
 function populateBO(p){
- $('detailId').textContent=p.paymentId;$('detailSubtitle').textContent=`${p.amount.toLocaleString(undefined,{minimumFractionDigits:2})} ${p.currency} · OUTGOING CREDIT TRANSFER · ${p.route.rail} ${p.route.scheme}`;
- $('detailStatus').className='badge green large';$('detailStatus').textContent='SENT';
- $('paymentFacts').innerHTML=facts([['Source System',p.sourceSystem],['Source Payment ID',p.sourcePaymentId],['Amount',`${p.amount.toFixed(2)} ${p.currency}`],['Charge Bearer',p.chargeBearer],['Priority',p.priority],['Rail',p.route.rail]]);
- $('partyFacts').innerHTML=facts([['Debtor',p.debtor.name],['Debtor Account',p.debtor.account],['Creditor',p.creditor.name],['Creditor Account',p.creditor.account],['Creditor Agent',p.creditor.agentBic],['Remittance',p.remittanceInformation]]);
- $('complianceFacts').innerHTML=facts([['AML Decision',p.aml.status],['AML Provider',p.aml.provider],['AML Decision ID',p.aml.decisionId],['AML Latency',p.aml.latency],['Anti-Fraud Decision',p.fraud.status],['Anti-Fraud Provider',p.fraud.provider],['Fraud Decision ID',p.fraud.decisionId],['Fraud Latency',p.fraud.latency],['Posting Gate',p.postingGate],['Rejection Source',p.rejectionSource||'-'],['Rejection Reason',p.rejectionReason||'-']]);
- $('routingFacts').innerHTML=facts([['Rail',p.route.rail],['Scheme',p.route.scheme],['Correspondent',p.route.correspondent?`${p.route.correspondentBank} (${p.route.correspondent})`:'Direct'],['Nostro',p.route.nostro||'N/A'],['Message Profile',p.route.profile],['Estimated Route Cost',p.route.routeCost]]);
- const events=['Payment Received','Canonical Payment Created','Validation Successful',`AML Screening: ${p.aml?.status||'-'}`,`Anti-Fraud: ${p.fraud?.status||'-'}`,`Posting Gate: ${p.postingGate||'-'}`,`Route Selected: ${p.route.rail} / ${p.route.scheme}`,'Payment Message Generated',`Sent to ${p.route.network}`];
- $('lifecycle').innerHTML=events.map(x=>`<span>✓ ${x}</span>`).join('');
- $('coreInteractions').innerHTML=['✓ CreatePayment request received','✓ Debtor/account data accepted','✓ AML screening: CLEAR','✓ Anti-Fraud: APPROVE','✓ Posting Gate: CLEARED','✓ Core posting eligible','✓ Payment reference correlated: '+p.sourcePaymentId].map(x=>`<span>${x}</span>`).join('');
- $('auditTrail').innerHTML=events.map((x,i)=>`<span>${new Date(p.createdAt.getTime()+i*500).toLocaleTimeString()} · ${x}</span>`).join('');
- $('messageTable').innerHTML=`<tr><td>OUT</td><td><b>pacs.008</b></td><td>${p.messageId}</td><td>${p.route.network}</td><td><span class="badge green">SENT</span></td></tr>`;
- $('viewXmlBtn').disabled=false;
+ currentPayment=p; selectedPaymentId=p.paymentId; currentXml=p.xml||'';
+ const dir=p.direction||'OUTGOING', route=p.route||{rail:'N/A',scheme:'N/A',network:'N/A'};
+ $('detailId').textContent=p.paymentId;
+ $('detailSubtitle').textContent=`${p.amount.toLocaleString(undefined,{minimumFractionDigits:2})} ${p.currency} · ${dir} CREDIT TRANSFER · ${route.rail} ${route.scheme}`;
+ $('detailStatus').className='badge large '+(['REJECTED','EXCEPTION'].includes(p.status)?'amber':'green');
+ $('detailStatus').textContent=p.status||'PROCESSING';
+ $('paymentFacts').innerHTML=facts([['Direction',dir],['Source System',p.sourceSystem],['Source Payment ID',p.sourcePaymentId],['Amount',`${p.amount.toFixed(2)} ${p.currency}`],['Charge Bearer',p.chargeBearer],['Priority',p.priority],['Rail',route.rail]]);
+ $('partyFacts').innerHTML=facts([['Debtor',p.debtor?.name],['Debtor Account',p.debtor?.account],['Creditor',p.creditor?.name],['Creditor Account',p.creditor?.account],['Creditor Agent',p.creditor?.agentBic],['Remittance',p.remittanceInformation]]);
+ $('complianceFacts').innerHTML=facts([['AML Decision',p.aml?.status],['AML Provider',p.aml?.provider],['AML Decision ID',p.aml?.decisionId],['Anti-Fraud Decision',p.fraud?.status],['Anti-Fraud Provider',p.fraud?.provider],['Fraud Decision ID',p.fraud?.decisionId],['Posting Gate',p.postingGate],['Rejection Source',p.rejectionSource||'-'],['Rejection Reason',p.rejectionReason||'-']]);
+ $('routingFacts').innerHTML=dir==='OUTGOING'?facts([['Rail',route.rail],['Scheme',route.scheme],['Correspondent',route.correspondent?`${route.correspondentBank||''} (${route.correspondent})`:'Direct'],['Nostro',route.nostro||'N/A'],['Message Profile',route.profile||'-'],['Estimated Route Cost',route.routeCost||'-']]):facts([['Inbound Rail',route.rail],['Scheme',route.scheme],['Network',route.network],['Processing', 'Incoming payment — no outbound routing decision required']]);
+ const events=p.events||[];
+ $('lifecycle').innerHTML=events.length?events.map(x=>`<span>✓ ${esc(x)}</span>`).join(''):'<span>No lifecycle events.</span>';
+ $('coreInteractions').innerHTML=(p.coreEvents||[]).map(x=>`<span>${esc(x)}</span>`).join('')||'<span>No core interactions.</span>';
+ $('auditTrail').innerHTML=events.map((x,i)=>`<span>${new Date(new Date(p.createdAt).getTime()+i*500).toLocaleTimeString()} · ${esc(x)}</span>`).join('');
+ const msgs=p.messages||[];
+ $('messageTable').innerHTML=msgs.length?msgs.map(m=>`<tr><td>${m.direction}</td><td><b>${m.type}</b></td><td>${esc(m.id)}</td><td>${esc(m.network)}</td><td>${statusBadge(m.status)}</td></tr>`).join(''):'<tr><td colspan="5">No messages generated.</td></tr>';
+ $('viewXmlBtn').disabled=!p.xml;
 }
 function facts(items){return items.map(([a,b])=>`<div class="fact"><small>${a}</small><b>${esc(b??'—')}</b></div>`).join('')}
-function addPaymentRow(p){const empty=$('emptyPaymentsRow');if(empty)empty.remove();$('paymentsTable').insertAdjacentHTML('afterbegin',`<tr><td><b>${p.paymentId}</b></td><td>${esc(p.sourcePaymentId)}</td><td>OUTGOING</td><td>${p.amount.toFixed(2)} ${p.currency}</td><td>${p.route.rail}</td><td>${esc(p.creditor.agentBic)}</td><td><span class="badge green">SENT</span></td><td><button class="link-btn" onclick="openCurrentPayment()">Open</button></td></tr>`)}
-window.openCurrentPayment=()=>openPage('payment-detail');
-window.showExamplePayment=()=>openPage('payment-detail');
+function addPaymentRow(p){
+ const empty=$('emptyPaymentsRow'); if(empty)empty.remove();
+ const agent=p.direction==='INCOMING'?(p.debtor?.agentBic||p.creditor?.agentBic||'—'):(p.creditor?.agentBic||'—');
+ $('paymentsTable').insertAdjacentHTML('afterbegin',`<tr data-payment-id="${p.paymentId}"><td><b>${p.paymentId}</b></td><td>${esc(p.sourcePaymentId)}</td><td>${p.direction}</td><td>${p.amount.toFixed(2)} ${p.currency}</td><td>${p.route?.rail||'—'}</td><td>${esc(agent)}</td><td>${statusBadge(p.status)}</td><td><button class="link-btn" onclick="openPayment('${p.paymentId}')">Open</button></td></tr>`);
+}
+window.openPayment=id=>{
+ const p=paymentStore.get(id); if(!p)return;
+ populateBO(p);
+ document.querySelectorAll('.payments-subtab').forEach(x=>x.classList.toggle('active',x.dataset.paytab==='paymentDetailsPane'));
+ document.querySelectorAll('.payments-pane').forEach(x=>x.classList.toggle('active',x.id==='paymentDetailsPane'));
+ openPage('payments');
+};
+window.openCurrentPayment=()=>selectedPaymentId&&openPayment(selectedPaymentId);
+window.showExamplePayment=()=>selectedPaymentId&&openPayment(selectedPaymentId);
 
+function incomingPayload(){
+ const p=payload(); p.direction='INCOMING'; p.sourceSystem='PAYMENT_NETWORK';
+ // Reuse form parties as network-provided payment data.
+ return p;
+}
+async function simulateIncoming(){
+ resetSteps(); const btn=$('sendBtn'); btn.disabled=true;
+ $('pipelineStatus').className='badge blue'; $('pipelineStatus').textContent='PROCESSING';
+ demoCounters.incoming.total++; demoCounters.incoming.processing++; renderCounters();
+ try{
+  let p=incomingPayload(); p.paymentId='PAY-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+String(Date.now()).slice(-6); p.createdAt=new Date();
+  p.scenario=$('scenario')?.value||'success';
+  p.route=routePayment(p); p.route.routeCost='N/A';
+  for(const s of ['received','canonical','validated']){setStep(s,'active');await wait(250);setStep(s,'done')}
+  setStep('compliance','active');await wait(300);
+  p.aml={status:p.scenario==='aml_reject'?'REJECT':'CLEAR',provider:'AML Screening API',decisionId:'AML-'+String(Date.now()).slice(-7),latency:'171 ms'};
+  p.fraud={status:p.scenario==='fraud_reject'?'DECLINE':'APPROVE',provider:'Anti-Fraud API',decisionId:'FRD-'+String(Date.now()).slice(-7),latency:'119 ms'};
+  if(p.aml.status==='REJECT'||p.fraud.status==='DECLINE'){
+    p.postingGate='BLOCKED';p.status='REJECTED';p.rejectionSource=p.aml.status==='REJECT'?'AML':'ANTI_FRAUD';p.rejectionReason='Incoming payment blocked before beneficiary credit';setStep('compliance','error');
+  }else{
+    p.postingGate='CLEARED';setStep('compliance','done');
+    setStep('routed','active');await wait(220);setStep('routed','done');
+    setStep('generated','active');await wait(220);setStep('generated','done');
+    setStep('sent','active');await wait(220);setStep('sent','done');
+    setStep('response','active');await wait(220);setStep('response','done');
+    p.status='COMPLETED'; p.networkStatus='RECEIVED'; p.coreStatus='POSTED';
+  }
+  p.messageId='MSG-IN-'+String(Date.now()).slice(-8);
+  p.xml=`<Document><IncomingPayment><PaymentId>${p.paymentId}</PaymentId><Amount Ccy="${p.currency}">${p.amount.toFixed(2)}</Amount><Source>Payment Network</Source></IncomingPayment></Document>`;
+  p.messages=[{direction:'IN',type:'pacs.008',id:p.messageId,network:p.route.network,status:'RECEIVED'}];
+  if(p.status==='COMPLETED')p.messages.push({direction:'OUT',type:'pacs.002',id:'STS-'+String(Date.now()).slice(-8),network:p.route.network,status:'SENT'});
+  p.events=['Network Message Received','ISO Message Parsed','Canonical Payment Created','Business Validation Successful',`AML: ${p.aml.status}`,`Anti-Fraud: ${p.fraud.status}`,`Posting Gate: ${p.postingGate}`];
+  p.coreEvents=[];
+  if(p.status==='COMPLETED'){p.events.push('Beneficiary Credit Posted','Payment Completed');p.coreEvents=['✓ Beneficiary/account validated','✓ Credit posting requested','✓ Core posting: POSTED'];}
+  else {p.events.push('Payment Rejected Before Core Posting');p.coreEvents=['— No posting requested: pre-posting gate blocked'];}
+  paymentStore.set(p.paymentId,p); selectedPaymentId=p.paymentId; currentPayment=p; currentXml=p.xml;
+  demoCounters.incoming.processing=Math.max(0,demoCounters.incoming.processing-1);
+  if(p.status==='COMPLETED')demoCounters.incoming.completed++; else demoCounters.incoming.exceptions++;
+  renderCounters(); addPaymentRow(p); populateBO(p);
+  $('pipelineStatus').className='badge '+(p.status==='COMPLETED'?'green':'amber');$('pipelineStatus').textContent=p.status;
+  $('decisionBox').innerHTML=p.status==='COMPLETED'?'<b>Incoming Processing</b><br>Network payment received, controls cleared and beneficiary credit posted.':'<b>Incoming Exception</b><br>'+esc(p.rejectionReason);
+  $('decisionBox').classList.remove('hidden');
+ }finally{btn.disabled=false}
+}
+async function simulate(){return ($('paymentDirection')?.value||'OUTGOING')==='INCOMING'?simulateIncoming():simulateOutgoing()}
+
+document.querySelectorAll('.direction-btn').forEach(btn=>btn.addEventListener('click',()=>{
+ document.querySelectorAll('.direction-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');
+ $('paymentDirection').value=btn.dataset.direction;
+ $('requestTitle').textContent=btn.dataset.direction==='INCOMING'?'Payment Network Message / Payment Data':'Core / Channel Request';
+ updatePreview(); resetSteps();
+}));
+document.querySelectorAll('.payments-subtab').forEach(btn=>btn.addEventListener('click',()=>{
+ document.querySelectorAll('.payments-subtab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');
+ document.querySelectorAll('.payments-pane').forEach(x=>x.classList.toggle('active',x.id===btn.dataset.paytab));
+}));
 $('sendBtn').addEventListener('click',simulate);$('resetBtn').addEventListener('click',resetSteps);renderCounters();
 $('viewXmlBtn').onclick=()=>{$('xmlPreview').textContent=currentXml;$('xmlModal').classList.remove('hidden')};
 $('closeModal').onclick=()=> $('xmlModal').classList.add('hidden');

@@ -33,13 +33,17 @@
 
 <section id="demo" class="page active">
   <div class="eyebrow">END-TO-END DEMO</div>
-  <h2>Outgoing Payment Simulator</h2>
-  <p class="lead">Simulate an outgoing payment instruction received from Core Banking and watch the Hub validate it, perform AML and Anti-Fraud API checks, route it, generate the required payment message and expose the result to the Back Office.</p>
+  <h2>Payment Simulator</h2>
+  <p class="lead">Simulate both outgoing and incoming payments and follow how the Hub validates, controls, processes and exposes each lifecycle to Operations.</p>
 
   <div class="demo-grid">
     <article class="panel">
-      <div class="panel-title"><div><small>INPUT</small><h3>Core Banking Request</h3></div><span class="badge blue">POST /api/v1/payments</span></div>
-      <div class="form-grid">
+      <div class="panel-title"><div><small>INPUT</small><h3 id="requestTitle">Core / Channel Request</h3></div><span class="badge blue">POST /api/v1/payments</span></div>
+      <div class="direction-switch">
+<button type="button" class="direction-btn active" data-direction="OUTGOING">Outgoing</button>
+<button type="button" class="direction-btn" data-direction="INCOMING">Incoming</button>
+</div><input type="hidden" id="paymentDirection" value="OUTGOING">
+<div class="form-grid">
         <label>Source System<input id="sourceSystem" value="CORE_BANKING"></label>
         <label>Source Payment ID<input id="sourcePaymentId" value="TRX-987654"></label>
         <label>Debtor Customer ID<input id="customerId" value="CUST-001"></label>
@@ -65,7 +69,7 @@
   </label>
   <small>Choose the outcome you want to demonstrate. Rejections will stop or reverse the lifecycle at the appropriate stage.</small>
 </div>
-<button id="sendBtn" class="primary">Send Payment to Hub</button>
+<button id="sendBtn" class="primary">Run Payment Simulation</button>
       <button id="resetBtn" class="secondary">Reset Demo</button>
     </article>
 
@@ -92,6 +96,11 @@
 
 <section id="payments" class="page">
   <div class="eyebrow">OPERATIONS</div><h2>Payments</h2>
+<div class="payments-subtabs">
+<button class="payments-subtab active" data-paytab="paymentsListPane">Payments</button>
+<button class="payments-subtab" data-paytab="paymentDetailsPane">Payment Details</button>
+</div>
+<div id="paymentsListPane" class="payments-pane active">
   <div class="counter-section">
     <div class="section-heading"><div><small>DEMO COUNTERS</small><h3>Outgoing Payments</h3></div><span class="badge blue">LIVE DEMO</span></div>
     <div class="metrics">
@@ -110,10 +119,10 @@
       <article><small>Exceptions</small><h3 id="inExceptions">0</h3></article>
     </div>
   </div>
-  <article class="panel"><div class="table-wrap"><table><thead><tr><th>Payment ID</th><th>Source Ref</th><th>Direction</th><th>Amount</th><th>Rail</th><th>Creditor Agent</th><th>Status</th><th></th></tr></thead><tbody id="paymentsTable"><tr id="emptyPaymentsRow"><td colspan="8">No demo payments sent yet.</td></tr></tbody></table></div></article>
-</section>
-
-<section id="payment-detail" class="page">
+  <article class="panel"><div class="table-wrap"><table><thead><tr><th>Payment ID</th><th>Source Ref</th><th>Direction</th><th>Amount</th><th>Rail</th><th>Agent</th><th>Status</th><th></th></tr></thead><tbody id="paymentsTable"><tr id="emptyPaymentsRow"><td colspan="8">No demo payments simulated yet.</td></tr></tbody></table></div></article>
+</div>
+<div id="paymentDetailsPane" class="payments-pane">
+<div id="payment-detail" class="embedded-detail">
   <div class="eyebrow">BACK OFFICE VIEW</div>
   <div class="detail-head"><div><h2 id="detailId">No simulated payment yet</h2><p id="detailSubtitle" class="lead">Run the Payment Simulator to create a payment.</p></div><span id="detailStatus" class="badge gray large">NO DATA</span></div>
   <div class="tabs"><button class="tab active" data-tab="overviewTab">Overview</button><button class="tab" data-tab="complianceTab">AML / Fraud</button><button class="tab" data-tab="routingTab">Routing</button><button class="tab" data-tab="messagesTab">Messages</button><button class="tab" data-tab="coreTab">Core</button><button class="tab" data-tab="auditTab">Audit</button></div>
@@ -136,7 +145,8 @@
 
   <div id="coreTab" class="tab-content"><article class="panel"><h3>Core Interactions</h3><div id="coreInteractions" class="timeline vertical"><span>Waiting for simulation</span></div></article></div>
   <div id="auditTab" class="tab-content"><article class="panel"><h3>Audit Trail</h3><div id="auditTrail" class="timeline vertical"><span>Waiting for simulation</span></div></article></div>
-</section>
+</div>
+</div>
 
 <section id="correspondents" class="page config-page">
   <div class="eyebrow">CONFIGURATION</div><h2>Correspondent Banks</h2><p class="lead">Reference data used by the Routing Engine to determine intermediary/correspondent paths.</p>
