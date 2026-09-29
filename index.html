@@ -156,8 +156,26 @@
 </section>
 
 <section id="nostros" class="page config-page">
-  <div class="eyebrow">CONFIGURATION</div><h2>Nostro Accounts</h2>
-  <article class="panel"><table><thead><tr><th>ID</th><th>Currency</th><th>Correspondent</th><th>Account</th><th>Status</th></tr></thead><tbody><tr><td><b>USD_NOSTRO_01</b></td><td>USD</td><td>CHASUS33</td><td>••••••4521</td><td><span class="badge green">ACTIVE</span></td></tr><tr><td>GBP_NOSTRO_01</td><td>GBP</td><td>BARCGB22</td><td>••••••8834</td><td><span class="badge green">ACTIVE</span></td></tr></tbody></table></article>
+  <div class="eyebrow">CONFIGURATION · SETTLEMENT REFERENCE DATA</div><h2>Nostro Accounts</h2>
+  <p class="lead">Each logical Nostro configuration links the external account held at the correspondent bank with its internal mirror account in Core Banking / General Ledger.</p>
+  <div class="nostro-concept">
+    <div><small>INTERNAL BOOKS</small><b>Internal Mirror Account</b><span>Core / GL accounting representation</span></div>
+    <strong>↔</strong>
+    <div><small>EXTERNAL WORLD</small><b>External Nostro Account</b><span>Account held at correspondent bank</span></div>
+  </div>
+  <article class="panel">
+    <h3>Nostro Mapping</h3>
+    <table><thead><tr><th>Nostro ID</th><th>Currency</th><th>Correspondent / BIC</th><th>External Nostro Account</th><th>Internal Mirror Account</th><th>Core / GL</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><b>USD_NOSTRO_JPM</b></td><td>USD</td><td>JPMorgan Chase<br><small>CHASUS33</small></td><td>••••••4521</td><td><b>001-USD-998877</b></td><td>CORE_BANKING</td><td><span class="badge green">ACTIVE</span></td></tr>
+      <tr><td><b>GBP_NOSTRO_BARC</b></td><td>GBP</td><td>Barclays<br><small>BARCGB22</small></td><td>••••••8834</td><td><b>001-GBP-774411</b></td><td>CORE_BANKING</td><td><span class="badge green">ACTIVE</span></td></tr>
+    </tbody></table>
+  </article>
+  <div class="two-col nostro-detail-grid">
+    <article class="panel"><div class="eyebrow">EXTERNAL NOSTRO</div><h3>Correspondent-side account</h3><p>The actual account maintained with the correspondent / settlement institution. Statement and settlement evidence such as camt.053 can be reconciled against this side.</p><div class="facts"><div class="fact"><small>Example BIC</small><b>CHASUS33</b></div><div class="fact"><small>Currency</small><b>USD</b></div></div></article>
+    <article class="panel"><div class="eyebrow">INTERNAL MIRROR</div><h3>Core / GL representation</h3><p>The internal account that mirrors the external Nostro in the bank's books. Core postings and internal reconciliation use this account.</p><div class="facts"><div class="fact"><small>Example Account</small><b>001-USD-998877</b></div><div class="fact"><small>System</small><b>CORE_BANKING</b></div></div></article>
+  </div>
+  <div class="callout"><b>Reconciliation link</b><p>The shared <strong>Nostro ID</strong> is the Payment Hub's logical identifier connecting routing, internal mirror postings and external Nostro settlement evidence.</p></div>
 </section>
 
 <section id="routing-rules" class="page config-page">
